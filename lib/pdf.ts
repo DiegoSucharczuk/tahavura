@@ -92,7 +92,6 @@ export async function generateQuotePDF(
       allowTaint: true,
       useCORS: true,
       logging: false,
-      dpi: 300,
       windowHeight: container.scrollHeight,
     });
 
