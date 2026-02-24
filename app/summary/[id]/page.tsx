@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Copy, Download, Share2, Check, ArrowLeft } from 'lucide-react';
+import { Copy, Download, Share2, Check, ArrowLeft, LogOut } from 'lucide-react';
 import { getQuote } from '@/lib/firestore';
 import { generateQuotePDF } from '@/lib/pdf';
 import { Quote } from '@/lib/types';
@@ -69,6 +69,11 @@ export default function SummaryPage() {
     }
   };
 
+  const handleLogout = () => {
+    document.cookie = '__session=; Max-Age=0; path=/;';
+    router.push('/login');
+  };
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -94,14 +99,23 @@ export default function SummaryPage() {
   return (
     <main className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-6"
-        >
-          <ArrowLeft size={20} />
-          חזור לדצמברית
-        </button>
+        {/* Navigation */}
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+          >
+            <ArrowLeft size={20} />
+            חזור לדצמברית
+          </button>
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+          >
+            <LogOut size={20} />
+            התנתקות
+          </button>
+        </div>
 
         {/* Header */}
         <div className="mb-8">
