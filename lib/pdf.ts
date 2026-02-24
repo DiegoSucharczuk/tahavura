@@ -11,18 +11,12 @@ export async function generateQuotePDF(
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
-    container.style.width = '700px';
-    container.style.padding = '30px';
+    container.style.width = '800px';
+    container.style.padding = '40px';
     container.style.backgroundColor = 'white';
     container.style.direction = 'rtl';
     container.style.fontFamily = 'Arial, sans-serif';
-    container.style.lineHeight = '1.5';
-    
-    // Get customer initials
-    const nameParts = quote.customerName.trim().split(' ');
-    const firstInitial = nameParts[0]?.[0]?.toUpperCase() || '';
-    const lastInitial = nameParts[nameParts.length - 1]?.[0]?.toUpperCase() || '';
-    const initials = `${firstInitial}${lastInitial}`;
+    container.style.lineHeight = '1.6';
     
     // Build HTML content
     let html = `
@@ -32,7 +26,7 @@ export async function generateQuotePDF(
         
         <div style="margin: 15px 0;">
           <p style="margin: 8px 0;"><strong>שם הלקוח:</strong> ${quote.customerName}</p>
-          <p style="margin: 8px 0;"><strong>מספר תעודת זהות:</strong> ${quote.idNumber}</p>
+          <p style="margin: 8px 0;"><strong>מספר תעודת זהות:</strong> ${quote.idNumber || '—'}</p>
           <p style="margin: 8px 0;"><strong>מספר רישוי רכב:</strong> ${quote.carPlate}</p>
           <p style="margin: 8px 0;"><strong>מספר טלפון:</strong> ${quote.phoneNumber}</p>
           <p style="margin: 8px 0;"><strong>נוצר ב-:</strong> ${quote.createdAt.toLocaleDateString('he-IL')}</p>
@@ -58,18 +52,23 @@ export async function generateQuotePDF(
 
     if (quote.quoteImageUrl) {
       html += `
-        <div style="margin: 15px 0; position: relative; display: inline-block;">
+        <div style="margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 3px; padding: 10px;">
           <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0;">תמונת ההצעה:</h3>
-          <img src="${quote.quoteImageUrl}" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 3px; max-height: 250px; display: block;" />
-          
-          ${quote.status === 'approved' && quote.signatureImageUrl ? `
-          <div style="position: absolute; left: -10px; bottom: 5px;">
-            <img id="signature-img" src="${quote.signatureImageUrl}" style="height: 40px; width: auto; display: block; margin: 0;" crossorigin="anonymous" />
+          <img src="${quote.quoteImageUrl}" style="max-width: 100%; height: auto; display: block; margin: 0;" />
+      `;
+
+      // Add signature if approved
+      if (quote.status === 'approved' && quote.signatureImageUrl) {
+        html += `
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd;">
+            <h3 style="font-size: 12px; font-weight: bold; margin: 0 0 8px 0;">חתימה:</h3>
+            <img src="${quote.signatureImageUrl}" style="height: 60px; width: auto; display: block; margin: 0;" />
+            <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">חתום על ידי: ${quote.customerName}</p>
           </div>
-          <div style="position: absolute; left: 15px; bottom: 50px; text-align: center;">
-            <p style="margin: 0; font-size: 10px; color: #000; line-height: 1;">${quote.customerName}</p>
-          </div>
-          ` : ''}
+        `;
+      }
+
+      html += `
         </div>
       `;
     }
@@ -83,20 +82,8 @@ export async function generateQuotePDF(
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    // Wait for all images to load
-    const images = container.querySelectorAll('img');
-    const imagePromises = Array.from(images).map(img => {
-      return new Promise<void>((resolve) => {
-        if (img.complete) {
-          resolve();
-        } else {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        }
-      });
-    });
-
-    await Promise.all(imagePromises);
+    // Wait a bit for images to load
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Capture the HTML as canvas
     const canvas = await html2canvas(container, {
@@ -105,9 +92,8 @@ export async function generateQuotePDF(
       allowTaint: true,
       useCORS: true,
       logging: false,
-      ignoreElements: (element) => {
-        return false;
-      },
+      dpi: 300,
+      windowHeight: container.scrollHeight,
     });
 
     // Remove the temporary container
