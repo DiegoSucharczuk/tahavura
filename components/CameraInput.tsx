@@ -6,11 +6,13 @@ import { Camera, X, Check } from 'lucide-react';
 interface CameraInputProps {
   onCapture: (file: File) => void;
   label?: string;
+  carPlate?: string;
 }
 
 export const CameraInput: React.FC<CameraInputProps> = ({
   onCapture,
   label = 'צלם תמונה של ההצעה',
+  carPlate = '',
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -128,7 +130,9 @@ export const CameraInput: React.FC<CameraInputProps> = ({
       }
       
       const blob = new Blob([u8arr], { type: mime });
-      const file = new File([blob], `quote-${Date.now()}.jpg`, {
+      const timestamp = Date.now();
+      const suggestedName = carPlate.replace(/[^a-zA-Z0-9]/g, '') || 'quote';
+      const file = new File([blob], `${suggestedName}-${timestamp}.jpg`, {
         type: 'image/jpeg',
       });
       

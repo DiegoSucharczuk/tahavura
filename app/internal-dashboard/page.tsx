@@ -212,7 +212,7 @@ export default function Dashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 תמונת ההצעה
               </label>
-              <CameraInput onCapture={handleImageCapture} />
+              <CameraInput onCapture={handleImageCapture} carPlate={formData.carPlate} />
 
               {/* Image Preview */}
               {imagePreview && (
