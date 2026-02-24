@@ -3,6 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // בדוק אם זה מכשיר ניידון
+  const userAgent = request.headers.get('user-agent') || '';
+  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+
+  // הגנה על /internal-dashboard/users - רק דסקטופ
+  if (pathname === '/internal-dashboard/users' && isMobile) {
+    return NextResponse.redirect(new URL('/internal-dashboard', request.url));
+  }
+
   // אם המשתמש מנסה להיכנס ל-root ללא auth
   if (pathname === '/') {
     // בדוק אם יש Firebase token בקוקי (נוסיף בהמשך)

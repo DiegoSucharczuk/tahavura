@@ -13,6 +13,7 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -28,8 +29,38 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
+    // בדוק אם זה מכשיר נייד
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    
+    if (isMobileDevice) {
+      setIsMobile(true);
+      // עוד כונן לעמוד הבית אם זה נייד
+      setTimeout(() => router.push('/internal-dashboard'), 1000);
+      return;
+    }
+
     loadUsers();
-  }, []);
+  }, [router]);
+
+  // תצוגה אם זה נייד
+  if (isMobile) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="mb-6 text-5xl">📱</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">זה לא זמין על טלפון</h1>
+          <p className="text-gray-600 mb-6">ניהול משתמשים זמין רק מהמחשב</p>
+          <button
+            onClick={() => router.push('/internal-dashboard')}
+            className="py-2 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            חזור לעמוד הבית
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   const loadUsers = async () => {
     setIsLoading(true);
