@@ -12,6 +12,7 @@ export default function QuotesListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all');
 
   useEffect(() => {
     loadQuotes();
@@ -109,24 +110,53 @@ export default function QuotesListPage() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Filter Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-gray-600 text-sm">סה"כ הצעות</p>
-            <p className="text-3xl font-bold text-gray-900">{quotes.length}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-gray-600 text-sm">אושר</p>
-            <p className="text-3xl font-bold text-green-600">
+          <button
+            onClick={() => setFilter('all')}
+            className={`rounded-lg shadow p-4 transition-all ${
+              filter === 'all'
+                ? 'bg-blue-600 text-white scale-105'
+                : 'bg-white text-gray-900 hover:shadow-lg'
+            }`}
+          >
+            <p className={`text-sm ${filter === 'all' ? 'text-blue-100' : 'text-gray-600'}`}>
+              סה"כ הצעות
+            </p>
+            <p className={`text-3xl font-bold ${filter === 'all' ? 'text-white' : 'text-gray-900'}`}>
+              {quotes.length}
+            </p>
+          </button>
+          <button
+            onClick={() => setFilter('approved')}
+            className={`rounded-lg shadow p-4 transition-all ${
+              filter === 'approved'
+                ? 'bg-green-600 text-white scale-105'
+                : 'bg-white text-gray-900 hover:shadow-lg'
+            }`}
+          >
+            <p className={`text-sm ${filter === 'approved' ? 'text-green-100' : 'text-gray-600'}`}>
+              אושר
+            </p>
+            <p className={`text-3xl font-bold ${filter === 'approved' ? 'text-white' : 'text-green-600'}`}>
               {quotes.filter((q) => q.status === 'approved').length}
             </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-gray-600 text-sm">בהמתנה</p>
-            <p className="text-3xl font-bold text-yellow-600">
+          </button>
+          <button
+            onClick={() => setFilter('pending')}
+            className={`rounded-lg shadow p-4 transition-all ${
+              filter === 'pending'
+                ? 'bg-yellow-600 text-white scale-105'
+                : 'bg-white text-gray-900 hover:shadow-lg'
+            }`}
+          >
+            <p className={`text-sm ${filter === 'pending' ? 'text-yellow-100' : 'text-gray-600'}`}>
+              בהמתנה
+            </p>
+            <p className={`text-3xl font-bold ${filter === 'pending' ? 'text-white' : 'text-yellow-600'}`}>
               {quotes.filter((q) => q.status === 'pending').length}
             </p>
-          </div>
+          </button>
         </div>
 
         {/* Quotes Table */}
@@ -137,12 +167,34 @@ export default function QuotesListPage() {
               href="/"
               className="inline-block py-2 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
-              צור את ההצעה הראשונה שלך
+              צור הצעה
             </Link>
+          </div>
+        ) : quotes.filter((quote) => {
+            if (filter === 'all') return true;
+            if (filter === 'approved') return quote.status === 'approved';
+            if (filter === 'pending') return quote.status === 'pending';
+            return true;
+          }).length === 0 ? (
+          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+            <p className="text-gray-600 mb-4">לא קיימות הצעות בקטגוריה זו</p>
+            <button
+              onClick={() => setFilter('all')}
+              className="py-2 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              הצג הכל
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quotes.map((quote) => (
+            {quotes
+              .filter((quote) => {
+                if (filter === 'all') return true;
+                if (filter === 'approved') return quote.status === 'approved';
+                if (filter === 'pending') return quote.status === 'pending';
+                return true;
+              })
+              .map((quote) => (
               <div
                 key={quote.id}
                 className="bg-white rounded-lg shadow-lg p-4 border-r-4 border-blue-500 hover:shadow-xl transition-shadow"
@@ -171,33 +223,33 @@ export default function QuotesListPage() {
                 {/* Details */}
                 <div className="space-y-2 mb-3 text-sm border-t pt-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{quote.phoneNumber}</span>
                     <span className="text-gray-700 font-medium">טלפון:</span>
+                    <span className="text-gray-600">{quote.phoneNumber}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-gray-700 font-medium">נוצר:</span>
                     <span className="text-gray-600">
                       {quote.createdAt.toLocaleDateString('he-IL', {
                         month: 'short',
                         day: 'numeric',
                       })}
                     </span>
-                    <span className="text-gray-700 font-medium">נוצר:</span>
                   </div>
                   {quote.approvedAt && (
                     <div className="flex justify-between">
+                      <span className="text-gray-700 font-medium">חתימה תאריך :</span>
                       <span className="text-gray-600">
                         {quote.approvedAt.toLocaleDateString('he-IL', {
                           month: 'short',
                           day: 'numeric',
                         })}
                       </span>
-                      <span className="text-gray-700 font-medium">חותמ:</span>
                     </div>
                   )}
                   {quote.idNumber && (
                     <div className="flex justify-between">
+                      <span className="text-gray-700 font-medium">תעודה זהות:</span>
                       <span className="text-gray-600">{quote.idNumber}</span>
-                      <span className="text-gray-700 font-medium">תעודה:</span>
                     </div>
                   )}
                 </div>
