@@ -37,7 +37,7 @@ export default function SummaryPage() {
     loadQuote();
   }, [quoteId]);
 
-  const approvalUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/approve/${quoteId}`;
+  const approvalUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/v/${quoteId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(approvalUrl).then(() => {
