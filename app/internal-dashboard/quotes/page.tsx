@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut } from 'lucide-react';
+import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getAllQuotes, deleteQuote } from '@/lib/firestore';
@@ -114,6 +114,13 @@ export default function QuotesListPage() {
               className="py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
             >
               + הצעה חדשה
+            </Link>
+            <Link
+              href="/internal-dashboard/users"
+              className="py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+            >
+              <Users size={18} />
+              משתמשים
             </Link>
             <button
               onClick={handleLogout}

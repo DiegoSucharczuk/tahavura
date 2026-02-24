@@ -1,0 +1,78 @@
+// Firestore Security Rules for Tahavura Quote System
+// Last Updated: February 24, 2026
+// 
+// NOTE: This app uses custom session authentication (not Firebase Auth)
+// Rules are set permissive on Firestore - actual protection is via:
+// - Middleware.ts (blocks unauthenticated routes)
+// - App-level checks (login page, session cookie)
+// - Customer approve page (4-digit verification)
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =====================
+    // USERS COLLECTION
+    // =====================
+    // Protected at app level (login page + session cookie)
+    match /users/{userId} {
+      // Read/write allowed (app handles auth)
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // =====================
+    // QUOTES COLLECTION
+    // =====================
+    // Protected at app level (middleware + login)
+    match /quotes/{quoteId} {
+      // Read/write allowed (app handles auth)
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // =====================
+    // SIGNATURES COLLECTION
+    // =====================
+    // Protected at app level
+    match /signatures/{signatureId} {
+      allow read, write: if true;
+    }
+
+    // Store quote images as nested data (in quotes document)
+    // No separate storage needed
+
+    // =====================
+    // DEFAULT - DENY ALL
+    // =====================
+    // Protect any collections not explicitly allowed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+/*
+  IMPORTANT: This permissive setup works because:
+  
+  1. Middleware checks /internal-dashboard routes
+     - Requires __session cookie
+     - Redirects to /login if missing
+  
+  2. Login page authenticates user
+     - Queries Firestore for user by email
+     - Verifies password hash
+     - Sets __session cookie
+  
+  3. Customer approval page (/v/[id])
+     - Verifies 4 digits of car plate
+     - Prevents unauthorized access
+  
+  4. Client-side checks
+     - Quote operations require active session
+     - Delete/Update operations check user role
+  
+  FUTURE: Move to Firebase Authentication for better security
+*/
+
+

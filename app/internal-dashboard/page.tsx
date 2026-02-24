@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Send, List, LogOut } from 'lucide-react';
+import { Send, List, Users, LogOut } from 'lucide-react';
 import { CameraInput } from '@/components/CameraInput';
 import { createQuote, uploadImage } from '@/lib/firestore';
 
@@ -99,6 +99,13 @@ export default function Dashboard() {
             >
               <List size={20} />
               צפה בכל ההצעות
+            </Link>
+            <Link
+              href="/internal-dashboard/users"
+              className="inline-flex items-center gap-2 py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              <Users size={20} />
+              ניהול משתמשים
             </Link>
             <button
               onClick={handleLogout}

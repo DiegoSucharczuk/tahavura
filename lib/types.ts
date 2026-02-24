@@ -13,3 +13,15 @@ export interface Quote {
 }
 
 export type QuoteFormData = Omit<Quote, 'id' | 'status' | 'signatureImageUrl' | 'createdAt' | 'approvedAt'>;
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  role: 'admin' | 'worker';
+  createdAt: Date;
+  lastLogin: Date | null;
+}
+
+export type UserFormData = Omit<User, 'id' | 'passwordHash' | 'createdAt' | 'lastLogin'>;

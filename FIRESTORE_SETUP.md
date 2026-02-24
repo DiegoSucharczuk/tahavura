@@ -1,0 +1,231 @@
+# Firestore Setup Guide
+
+## Step 1: Firebase Console Setup
+
+### 1.1 Create Firestore Database
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Select your project → **Firestore Database**
+3. Click **Create Database**
+4. Select **Start in Test Mode** (for development)
+5. Choose region closest to you (e.g., `us-central1`)
+6. Click **Create**
+
+### 1.2 Create Collections
+Firestore will auto-create collections when you add data, but you can also create them manually:
+
+1. Click **+ Start Collection**
+2. Collection ID: `quotes`
+3. Click **Next** → Skip document creation
+4. Click **+ Start Collection** again
+5. Collection ID: `users`
+6. Click **Next** → Skip document creation
+
+## Step 2: Create Admin User
+
+### Option A: Manual Entry (Easiest)
+
+1. In Firestore Console, click **Collections** → **users**
+2. Click **+ Add Document**
+3. Document ID: Leave blank (auto-generate)
+4. Add fields one by one:
+
+| Field | Type | Value |
+|-------|------|-------|
+| `email` | String | `admin@example.com` |
+| `name` | String | `Admin` |
+| `passwordHash` | String | `(see below)` |
+| `role` | String | `admin` |
+| `createdAt` | Timestamp | (current date/time) |
+| `lastLogin` | null | (leave empty) |
+
+**To generate passwordHash:**
+
+1. Open your app at http://localhost:3000/login
+2. Open browser console (F12 → Console tab)
+3. Copy and paste this code:
+
+```javascript
+(async () => {
+  const password = 'admin123'; // Change if desired
+  
+  const hashPassword = async (password) => {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const saltHex = Array.from(salt)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + saltHex);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    return `${saltHex}$${hashHex}`;
+  };
+  
+  const hash = await hashPassword(password);
+  console.log('Copy this passwordHash:');
+  console.log(hash);
+})();
+```
+
+4. Copy the output (long string starting with hex)
+5. Paste it into Firestore `passwordHash` field
+
+### Option B: Via Node Script
+
+If you have Node.js 18+ installed:
+
+```bash
+cd /path/to/tahavura
+node lib/seedUsers.ts
+```
+
+Or with ts-node:
+
+```bash
+npx ts-node lib/seedUsers.ts
+```
+
+(Note: Current seedUsers.ts is browser-only, can be converted to Node if needed)
+
+## Step 3: Deploy Firestore Security Rules
+
+### 3.1 Using Firebase CLI
+
+```bash
+# Install Firebase CLI (once)
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Set project
+firebase use tahavura-xxxxx  # or your project ID
+
+# Deploy rules
+firebase deploy --only firestore:rules
+```
+
+### 3.2 Manual Upload in Console
+
+1. Go to Firestore Database → **Rules** tab
+2. Copy entire content of `firestore.rules` file in your project
+3. Paste into the rules editor
+4. Click **Publish**
+
+## Step 4: Verify Setup
+
+After creating the admin user and deploying rules:
+
+### 4.1 Check User in Firestore
+1. Collections → **users**
+2. Should see document with admin@example.com
+3. Click document → verify all fields present
+
+### 4.2 Test Login
+1. Run `npm run dev`
+2. Go to http://localhost:3000
+3. Should redirect to /login
+4. Enter:
+   - Email: `admin@example.com`
+   - Password: `admin123` (or what you set)
+5. Should redirect to `/internal-dashboard`
+6. Should see dashboard with quotes and users links
+
+### 4.3 Verify Rules
+1. In Firestore console
+2. Go to **Rules** tab
+3. Should see your custom rules (not default test mode rules)
+4. Rules should mention `quotes` and `users` collections
+
+## Step 5: Create Additional Users
+
+Once logged in as admin:
+
+1. Go to `/internal-dashboard/users`
+2. Click **Create New User**
+3. Enter:
+   - Email: `worker@example.com`
+   - Name: `Worker Name`
+   - Password: `secure123`
+   - Role: `worker`
+4. Click **Create**
+5. Should see "User created successfully"
+6. New worker appears in users list
+
+Test login as worker:
+1. Logout (click logout button)
+2. Login with `worker@example.com` / `secure123`
+3. Should see dashboard (read-only mode, no user management)
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| **Login shows "User not found"** | Admin user not created in Firestore users collection |
+| **Login shows "Invalid password"** | passwordHash incorrect - regenerate using browser console |
+| **Firestore permission error** | Rules not deployed - deploy rules in Firestore Rules tab |
+| **"Cannot read property 'email' of null"** | Firestore rules blocking read - check rules syntax |
+| **Can't create new user** | Must be logged in as admin to access `/internal-dashboard/users` |
+| **Password hashing fails** | SubtleCrypto only works on HTTPS/localhost - use localhost for dev |
+
+## Database Schema Reference
+
+### `users` collection
+
+```typescript
+{
+  id: string;                    // Auto-generated by Firestore
+  email: string;                 // Unique email
+  name: string;                  // Display name
+  passwordHash: string;          // Format: "{saltHex}${hashHex}"
+  role: "admin" | "worker";      // Access level
+  createdAt: Timestamp;          // Creation time
+  lastLogin: Timestamp | null;   // Last login time
+}
+```
+
+### `quotes` collection
+
+```typescript
+{
+  id: string;                    // Auto-generated by Firestore
+  customerName: string;          // Customer name
+  carPlate: string;              // License plate
+  phoneNumber: string;           // WhatsApp number
+  quoteImageUrl: string;         // Base64 image or Cloud Storage URL
+  notes: string;                 // Additional notes
+  status: "pending" | "approved";
+  signatureImageUrl: string | null;
+  createdAt: Timestamp;
+  approvedAt: Timestamp | null;
+  createdBy: string;             // Worker email (future)
+}
+```
+
+## Security Rules Explanation
+
+The `firestore.rules` file implements:
+
+- **quotes collection:**
+  - Public read (customers can view)
+  - Write/delete restricted (workers + authentication)
+  
+- **users collection:**
+  - Limited read (only super admins or own user)
+  - Create/update/delete requires admin role
+  - Password field not returned in reads
+
+For production, consider:
+- Enabling Firebase Authentication
+- Restricting reads per user
+- Using Firestore Realtime Database security rules
+- Auditing data access
+
+---
+
+**Status:** Ready to Deploy  
+**Last Updated:** February 24, 2026

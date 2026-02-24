@@ -1,4 +1,4 @@
-import { Quote, QuoteFormData } from './types';
+import { Quote, QuoteFormData, User, UserFormData } from './types';
 import { db } from './firebase';
 import {
   collection,
@@ -245,4 +245,146 @@ export async function uploadImageFromDataUrl(
   path: string
 ): Promise<string> {
   return dataUrl; // Return base64 directly
+}
+
+// =====================
+// USER MANAGEMENT
+// =====================
+
+const USERS_COLLECTION = 'users';
+
+// Get all users
+export async function getAllUsers(): Promise<User[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
+    const users: User[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      users.push({
+        id: doc.id,
+        email: data.email,
+        name: data.name,
+        passwordHash: data.passwordHash,
+        role: data.role || 'worker',
+        createdAt: data.createdAt?.toDate?.() || new Date(),
+        lastLogin: data.lastLogin?.toDate?.() || null,
+      } as User);
+    });
+
+    return users.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch (error) {
+    console.error('Error getting users:', error);
+    return [];
+  }
+}
+
+// Get user by email
+export async function getUserByEmail(email: string): Promise<User | null> {
+  try {
+    const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
+    let foundUser: User | null = null;
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.email === email) {
+        foundUser = {
+          id: doc.id,
+          email: data.email,
+          name: data.name,
+          passwordHash: data.passwordHash,
+          role: data.role || 'worker',
+          createdAt: data.createdAt?.toDate?.() || new Date(),
+          lastLogin: data.lastLogin?.toDate?.() || null,
+        } as User;
+      }
+    });
+
+    return foundUser;
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    return null;
+  }
+}
+
+// Create new user
+export async function createUser(
+  email: string,
+  passwordHash: string,
+  name: string,
+  role: 'admin' | 'worker' = 'worker'
+): Promise<string> {
+  try {
+    const docRef = doc(collection(db, USERS_COLLECTION));
+    
+    await setDoc(docRef, {
+      email,
+      name,
+      passwordHash,
+      role,
+      createdAt: Timestamp.now(),
+      lastLogin: null,
+    });
+
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+// Update user
+export async function updateUser(
+  userId: string,
+  updates: Partial<User>
+): Promise<void> {
+  try {
+    const userRef = doc(db, USERS_COLLECTION, userId);
+    
+    const dataToUpdate: any = { ...updates };
+    
+    // Remove fields that shouldn't be updated
+    delete dataToUpdate.id;
+    delete dataToUpdate.createdAt;
+
+    await updateDoc(userRef, dataToUpdate);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+// Update user password
+export async function updateUserPassword(
+  userId: string,
+  newPasswordHash: string
+): Promise<void> {
+  try {
+    const userRef = doc(db, USERS_COLLECTION, userId);
+    await updateDoc(userRef, { passwordHash: newPasswordHash });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    throw error;
+  }
+}
+
+// Update last login
+export async function updateLastLogin(userId: string): Promise<void> {
+  try {
+    const userRef = doc(db, USERS_COLLECTION, userId);
+    await updateDoc(userRef, { lastLogin: Timestamp.now() });
+  } catch (error) {
+    console.error('Error updating last login:', error);
+    // Don't throw - this is not critical
+  }
+}
+
+// Delete user
+export async function deleteUser(userId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, USERS_COLLECTION, userId));
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
 }

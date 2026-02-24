@@ -17,8 +17,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/internal-dashboard', request.url));
   }
 
-  // הגנה על /internal-dashboard
-  if (pathname.startsWith('/internal-dashboard')) {
+  // הגנה על /internal-dashboard, /quotes, /approve, /summary
+  if (pathname.startsWith('/internal-dashboard') || pathname.startsWith('/quotes') || pathname.startsWith('/approve') || pathname.startsWith('/summary')) {
     const token = request.cookies.get('__session')?.value;
     
     if (!token) {
@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // /v/* הוא public - לא צריך הגנה
+  // /v/* הוא public (customer approval page) - לא צריך הגנה
   // /login הוא public - לא צריך הגנה
 
   return NextResponse.next();

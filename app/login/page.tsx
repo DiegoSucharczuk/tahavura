@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn } from 'lucide-react';
+import { getUserByEmail } from '@/lib/firestore';
+import { verifyPassword } from '@/lib/password';
+import { updateLastLogin } from '@/lib/firestore';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,24 +20,33 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // ⚠️ דוגמה בלבד - בהמשך תחזור Firebase Auth
-      // כרגע משתמש בעובדה שדברים בודדים לבדיקה
-      const validCredentials = [
-        { email: 'demo@garage.com', password: 'demo123' },
-        { email: 'garage@example.com', password: 'password123' },
-      ];
+      // Get user from Firestore
+      const user = await getUserByEmail(email);
 
-      const isValid = validCredentials.some(
-        (cred) => cred.email === email && cred.password === password
-      );
-
-      if (isValid) {
-        // שמור את ה-token בקוקי
-        document.cookie = '__session=valid-token; path=/; max-age=86400'; // 24 שעות
-        router.push('/internal-dashboard');
-      } else {
+      if (!user) {
         setError('אימייל או סיסמה שגויים');
+        setIsLoading(false);
+        return;
       }
+
+      // Verify password
+      const isPasswordValid = await verifyPassword(password, user.passwordHash);
+
+      if (!isPasswordValid) {
+        setError('אימייל או סיסמה שגויים');
+        setIsLoading(false);
+        return;
+      }
+
+      // Update last login
+      await updateLastLogin(user.id);
+
+      // Set auth cookie with user ID from Firestore
+      document.cookie = `__session=${user.id}; path=/; max-age=86400; secure; samesite=strict`;
+      document.cookie = `__userEmail=${user.email}; path=/; max-age=86400; secure; samesite=strict`;
+
+      // Redirect to dashboard
+      router.push('/internal-dashboard');
     } catch (err) {
       setError('שגיאה בהתחברות');
       console.error(err);
@@ -74,7 +86,7 @@ export default function LoginPage() {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="demo@garage.com"
+              placeholder="your@email.com"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
               required
@@ -118,13 +130,12 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Credentials Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 text-sm">
-          <p className="font-semibold text-blue-900 mb-2">פרטי דמומה:</p>
-          <p className="text-blue-800">אימייל: <code className="bg-white px-2 py-1 rounded">demo@garage.com</code></p>
-          <p className="text-blue-800">סיסמה: <code className="bg-white px-2 py-1 rounded">demo123</code></p>
+        {/* Info */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 text-sm text-center text-blue-800">
+          <p>פנה למנהל כדי להקבל אישורים לכניסה</p>
         </div>
       </div>
     </main>
   );
 }
+
