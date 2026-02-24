@@ -13,7 +13,7 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean | null>(null); // null means undetermined
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -29,19 +29,39 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    // בדוק אם זה מכשיר נייד
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
-    
-    if (isMobileDevice) {
-      setIsMobile(true);
-      // עוד כונן לעמוד הבית אם זה נייד
-      setTimeout(() => router.push('/internal-dashboard'), 1000);
-      return;
+    // בדוק אם זה מכשיר נייד - זה חייב להיות מוקדם ביותר
+    if (typeof window !== 'undefined') {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|windows phone/.test(userAgent);
+      
+      console.log('User-Agent:', navigator.userAgent);
+      console.log('Is Mobile:', isMobileDevice);
+      
+      if (isMobileDevice) {
+        console.log('🚫 Mobile user detected - redirecting...');
+        setIsMobile(true);
+        // עוד כונן לעמוד הבית אם זה נייד
+        router.replace('/internal-dashboard');
+        return;
+      }
+      
+      setIsMobile(false);
     }
-
+    
     loadUsers();
-  }, [router]);
+  }, []);
+
+  // אם טרם בדקנו - הצג טוען
+  if (isMobile === null) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600">בדיקה...</p>
+        </div>
+      </main>
+    );
+  }
 
   // תצוגה אם זה נייד
   if (isMobile) {
@@ -52,7 +72,7 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-3">זה לא זמין על טלפון</h1>
           <p className="text-gray-600 mb-6">ניהול משתמשים זמין רק מהמחשב</p>
           <button
-            onClick={() => router.push('/internal-dashboard')}
+            onClick={() => router.replace('/internal-dashboard')}
             className="py-2 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             חזור לעמוד הבית
