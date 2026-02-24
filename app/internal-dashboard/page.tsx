@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Send, List, Users, LogOut } from 'lucide-react';
@@ -20,6 +20,14 @@ export default function Dashboard() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // בדוק אם זה מכשיר נייד
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|windows phone/.test(userAgent);
+    setIsMobile(isMobileDevice);
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -114,13 +122,15 @@ export default function Dashboard() {
               <List size={20} />
               צפה בכל ההצעות
             </Link>
-            <Link
-              href="/internal-dashboard/users"
-              className="inline-flex items-center gap-2 py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
-            >
-              <Users size={20} />
-              ניהול משתמשים
-            </Link>
+            {!isMobile && (
+              <Link
+                href="/internal-dashboard/users"
+                className="inline-flex items-center gap-2 py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                <Users size={20} />
+                ניהול משתמשים
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="inline-flex items-center gap-2 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"

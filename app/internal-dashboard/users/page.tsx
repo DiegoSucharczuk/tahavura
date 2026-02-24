@@ -28,6 +28,19 @@ export default function UsersPage() {
     router.push('/login');
   };
 
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      const usersData = await getAllUsers();
+      setUsers(usersData);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      setError('שגיאה בטעינת משתמשים');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     // בדוק אם זה מכשיר נייד - זה חייב להיות מוקדם ביותר
     if (typeof window !== 'undefined') {
@@ -81,19 +94,6 @@ export default function UsersPage() {
       </main>
     );
   }
-
-  const loadUsers = async () => {
-    setIsLoading(true);
-    try {
-      const usersData = await getAllUsers();
-      setUsers(usersData);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      setError('שגיאה בטעינת משתמשים');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
