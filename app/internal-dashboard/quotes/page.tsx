@@ -279,7 +279,7 @@ export default function QuotesListPage() {
                 {/* Action Buttons */}
                 <div className="flex gap-2 justify-center flex-wrap border-t pt-3">
                   <Link
-                    href={`/internal-dashboard/quotes/${quote.id}`}
+                    href={`/quotes/${quote.id}`}
                     className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"
                     title="צפה בפרטים"
                   >

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Send, List, Users, LogOut } from 'lucide-react';
 import { CameraInput } from '@/components/CameraInput';
-import { createQuote, uploadImage } from '@/lib/firestore';
+import { createQuote } from '@/lib/firestore';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -34,9 +34,20 @@ export default function Dashboard() {
     setSelectedImage(file);
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
+      const dataUrl = e.target?.result as string;
+      setImagePreview(dataUrl);
+      // Store the base64 for later use
+      setFormData(prev => ({
+        ...prev,
+        quoteImageBase64: dataUrl
+      }));
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
+      console.log('✅ Image captured and saved');
+    };
+    reader.onerror = () => {
+      console.error('❌ Error reading file');
+      alert('טעות בקריאת התמונה');
     };
     reader.readAsDataURL(file);
   };
@@ -57,13 +68,10 @@ export default function Dashboard() {
 
     setIsLoading(true);
     try {
-      // Upload image if provided
-      let imageUrl = '';
-      if (selectedImage) {
-        const sanitizedCarPlate = formData.carPlate.replace(/[^a-zA-Z0-9-]/g, '');
-        const imagePath = `quotes/${sanitizedCarPlate}-${Date.now()}.jpg`;
-        imageUrl = await uploadImage(selectedImage, imagePath);
-      }
+      // Use the base64 directly if image was captured
+      const imageUrl = imagePreview || '';
+      
+      console.log('📤 Creating quote with image:', imageUrl ? '✅ YES' : '❌ NO');
 
       // Create quote document in Firestore
       const quoteId = await createQuote({
@@ -71,10 +79,12 @@ export default function Dashboard() {
         quoteImageUrl: imageUrl,
       });
 
+      console.log('✅ Quote created:', quoteId);
+      
       // Redirect to summary page
       router.push(`/summary/${quoteId}`);
     } catch (error) {
-      console.error('Error creating quote:', error);
+      console.error('❌ Error creating quote:', error);
       alert('הצעה לא נוצרה. אנא נסה שוב.');
     } finally {
       setIsLoading(false);
