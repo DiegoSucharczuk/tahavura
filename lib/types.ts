@@ -1,7 +1,7 @@
 export interface Quote {
   id: string;
   customerName: string;
-  idNumber: string | '';
+  idNumber?: string;
   carPlate: string;
   phoneNumber: string;
   quoteImageUrl: string;

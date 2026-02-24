@@ -145,9 +145,9 @@ export async function createQuote(data: QuoteFormData): Promise<string> {
     phoneNumber: data.phoneNumber,
     quoteImageUrl: data.quoteImageUrl,
     notes: data.notes,
+    idNumber: data.idNumber || '',
     status: 'pending',
     signatureImageUrl: null,
-    idNumber: '',
     createdAt: Timestamp.now(),
     approvedAt: null,
   };
@@ -164,9 +164,9 @@ export async function createQuote(data: QuoteFormData): Promise<string> {
   quotes[quoteId] = {
     id: quoteId,
     ...data,
+    idNumber: data.idNumber || '',
     status: 'pending',
     signatureImageUrl: null,
-    idNumber: '',
     createdAt: new Date().toISOString(),
     approvedAt: null,
   };
