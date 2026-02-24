@@ -7,11 +7,12 @@
  */
 
 const https = require("https");
+require('dotenv').config({ path: '.env.local' });
 
 // Firebase Configuration from .env.local
 const FIREBASE_CONFIG = {
-  projectId: "tahavura",
-  apiKey: "AIzaSyCdNrqX90Nskg7nVTaj4NaBbM9OgNT_1GU",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
 };
 
 // Password hash (pre-generated from generate-hash.js for admin123)
