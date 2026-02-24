@@ -166,8 +166,12 @@ export const CameraInput: React.FC<CameraInputProps> = ({
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('📁 File selected from gallery:', file?.name, file?.size, 'bytes');
     if (file) {
+      console.log('📁 Passing file to onCapture...');
       onCapture(file);
+    } else {
+      console.log('❌ No file selected');
     }
     // Reset input
     if (fileInputRef.current) {

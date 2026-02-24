@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Send, List, Users, LogOut } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function Dashboard() {
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string>('');
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -30,27 +31,23 @@ export default function Dashboard() {
     }));
   };
 
-  const handleImageCapture = (file: File) => {
+  const handleImageCapture = useCallback((file: File) => {
     setSelectedImage(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
+      console.log('✅ Image loaded:', dataUrl.substring(0, 50) + '...');
       setImagePreview(dataUrl);
-      // Store the base64 for later use
-      setFormData(prev => ({
-        ...prev,
-        quoteImageBase64: dataUrl
-      }));
+      setImageBase64(dataUrl);  // Store in separate state
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
-      console.log('✅ Image captured and saved');
     };
     reader.onerror = () => {
       console.error('❌ Error reading file');
       alert('טעות בקריאת התמונה');
     };
     reader.readAsDataURL(file);
-  };
+  }, []);
 
   const handleLogout = () => {
     // הסר את ה-token
@@ -66,12 +63,19 @@ export default function Dashboard() {
       return;
     }
 
+    // Check if image was uploaded
+    if (!imageBase64 || imageBase64.length === 0) {
+      alert('אנא העלה תמונה של ההצעה');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Use the base64 directly if image was captured
-      const imageUrl = imagePreview || '';
+      // Use the base64 stored in separate state
+      const imageUrl = imageBase64 || '';
       
       console.log('📤 Creating quote with image:', imageUrl ? '✅ YES' : '❌ NO');
+      console.log('📤 Image URL length:', imageUrl.length);
 
       // Create quote document in Firestore
       const quoteId = await createQuote({

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, Check } from 'lucide-react';
+import { ArrowLeft, Download, Check, LogOut } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getQuote } from '@/lib/firestore';
@@ -52,6 +52,11 @@ export default function QuoteDetailPage() {
     }
   };
 
+  const handleLogout = () => {
+    document.cookie = '__session=; Max-Age=0; path=/;';
+    router.push('/login');
+  };
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -92,16 +97,25 @@ export default function QuoteDetailPage() {
             <ArrowLeft size={20} />
             חזור
           </Link>
-          {quote.status === 'approved' && (
+          <div className="flex items-center gap-3">
+            {quote.status === 'approved' && (
+              <button
+                onClick={handleGeneratePDF}
+                disabled={isGeneratingPDF}
+                className="inline-flex items-center gap-2 py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+              >
+                <Download size={20} />
+                {isGeneratingPDF ? 'מייצר...' : 'הורד PDF'}
+              </button>
+            )}
             <button
-              onClick={handleGeneratePDF}
-              disabled={isGeneratingPDF}
-              className="inline-flex items-center gap-2 py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
-              <Download size={20} />
-              {isGeneratingPDF ? 'מייצר...' : 'הורד PDF'}
+              <LogOut size={20} />
+              התנתקות
             </button>
-          )}
+          </div>
         </div>
 
         {/* Status Card */}
