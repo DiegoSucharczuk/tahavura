@@ -115,19 +115,29 @@ export const CameraInput: React.FC<CameraInputProps> = ({
   const confirmCapture = () => {
     if (!capturedImage) return;
 
-    fetch(capturedImage)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const file = new File([blob], `quote-${Date.now()}.jpg`, {
-          type: 'image/jpeg',
-        });
-        onCapture(file);
-        closeCamera();
-      })
-      .catch((error) => {
-        console.error('Error converting image:', error);
-        setError('טעות בעיבוד התמונה. אנא נסה שוב.');
+    try {
+      // Convert data URL to blob directly
+      const arr = capturedImage.split(',');
+      const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+      const str = atob(arr[1]);
+      const n = str.length;
+      const u8arr = new Uint8Array(n);
+      
+      for (let i = 0; i < n; i++) {
+        u8arr[i] = str.charCodeAt(i);
+      }
+      
+      const blob = new Blob([u8arr], { type: mime });
+      const file = new File([blob], `quote-${Date.now()}.jpg`, {
+        type: 'image/jpeg',
       });
+      
+      onCapture(file);
+      closeCamera();
+    } catch (error) {
+      console.error('Error converting image:', error);
+      setError('טעות בעיבוד התמונה. אנא נסה שוב.');
+    }
   };
 
   const closeCamera = () => {
