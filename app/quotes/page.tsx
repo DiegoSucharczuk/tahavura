@@ -141,102 +141,117 @@ export default function QuotesListPage() {
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">לקוח</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">מספר רישוי</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">טלפון</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">סטטוס</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">תאריך חתימה</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">תאריך יצירה</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {quotes.map((quote) => (
-                    <tr key={quote.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{quote.customerName}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{quote.carPlate}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{quote.phoneNumber}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                            quote.status === 'approved'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {quote.status === 'approved' ? '✓ אושר' : '⏳ בהמתנה'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {quote.approvedAt
-                          ? quote.approvedAt.toLocaleDateString('he-IL', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {quote.createdAt.toLocaleDateString('he-IL', {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {quotes.map((quote) => (
+              <div
+                key={quote.id}
+                className="bg-white rounded-lg shadow-lg p-4 border-r-4 border-blue-500 hover:shadow-xl transition-shadow"
+              >
+                {/* Header with Status */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 text-right">
+                      {quote.customerName}
+                    </h3>
+                    <p className="text-sm text-gray-600 text-right">
+                      {quote.carPlate}
+                    </p>
+                  </div>
+                  <span
+                    className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                      quote.status === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                  >
+                    {quote.status === 'approved' ? '✓ אושר' : '⏳ בהמתנה'}
+                  </span>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-2 mb-3 text-sm border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{quote.phoneNumber}</span>
+                    <span className="text-gray-700 font-medium">טלפון:</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">
+                      {quote.createdAt.toLocaleDateString('he-IL', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    <span className="text-gray-700 font-medium">נוצר:</span>
+                  </div>
+                  {quote.approvedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">
+                        {quote.approvedAt.toLocaleDateString('he-IL', {
                           month: 'short',
                           day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
                         })}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <div className="flex gap-2 flex-wrap">
-                          <Link
-                            href={`/quotes/${quote.id}`}
-                            className="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1"
-                            title="צפה בפרטים"
-                          >
-                            <Eye size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleCopyLink(quote)}
-                            className="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1"
-                            title={copiedLinkId === quote.id ? 'הועתק!' : 'העתק קישור'}
-                          >
-                            <Share2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleShareWhatsApp(quote)}
-                            className="text-green-600 hover:text-green-800 font-medium inline-flex items-center gap-1"
-                            title="שתף בוואטסאפ"
-                          >
-                            <MessageCircle size={16} />
-                          </button>
-                          {quote.status === 'approved' && (
-                            <button
-                              onClick={() => handleGeneratePDF(quote)}
-                              disabled={isGeneratingPDF === quote.id}
-                              className="text-purple-600 hover:text-purple-800 font-medium inline-flex items-center gap-1 disabled:opacity-50"
-                              title="הורד PDF"
-                            >
-                              <Download size={16} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteQuote(quote.id)}
-                            className="text-red-600 hover:text-red-800 font-medium inline-flex items-center gap-1"
-                            title="מחק הצעה"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </span>
+                      <span className="text-gray-700 font-medium">חותמ:</span>
+                    </div>
+                  )}
+                  {quote.idNumber && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{quote.idNumber}</span>
+                      <span className="text-gray-700 font-medium">תעודה:</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 justify-center flex-wrap border-t pt-3">
+                  <Link
+                    href={`/quotes/${quote.id}`}
+                    className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"
+                    title="צפה בפרטים"
+                  >
+                    <Eye size={18} />
+                  </Link>
+                  <button
+                    onClick={() => handleCopyLink(quote)}
+                    className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"
+                    title={copiedLinkId === quote.id ? 'הועתק!' : 'העתק קישור'}
+                  >
+                    <Share2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleShareWhatsApp(quote)}
+                    className="text-green-600 hover:text-green-800 p-2 rounded hover:bg-green-50"
+                    title="שתף בוואטסאפ"
+                  >
+                    <MessageCircle size={18} />
+                  </button>
+                  {quote.status === 'approved' && (
+                    <button
+                      onClick={() => handleGeneratePDF(quote)}
+                      disabled={isGeneratingPDF === quote.id}
+                      className="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50 disabled:opacity-50"
+                      title="הורד PDF"
+                    >
+                      <Download size={18} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteQuote(quote.id)}
+                    className="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50"
+                    title="מחק הצעה"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                {/* Copy Success Message */}
+                {copiedLinkId === quote.id && (
+                  <div className="mt-3 text-center text-green-600 text-sm font-medium">
+                    ✓ הועתק!
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
