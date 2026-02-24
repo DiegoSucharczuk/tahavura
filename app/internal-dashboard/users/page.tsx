@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Edit2, LogOut, Lock, Phone } from 'lucide-react';
+import { Plus, Trash2, Edit2, LogOut, Lock, Phone, ArrowLeft } from 'lucide-react';
 import { User } from '@/lib/types';
 import { getAllUsers, deleteUser, createUser } from '@/lib/firestore';
 import { hashPassword } from '@/lib/password';
@@ -157,9 +157,18 @@ export default function UsersPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">ניהול משתמשים</h1>
-            <p className="text-gray-600">יצור, ערוך ומחק משתמשים מהמערכת</p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/internal-dashboard')}
+              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
+            >
+              <ArrowLeft size={20} />
+              חזור
+            </button>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">ניהול משתמשים</h1>
+              <p className="text-gray-600">יצור, ערוך ומחק משתמשים מהמערכת</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
