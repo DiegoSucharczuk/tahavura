@@ -111,49 +111,49 @@ export default function QuotesListPage() {
         </div>
 
         {/* Filter Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <button
             onClick={() => setFilter('all')}
-            className={`rounded-lg shadow p-4 transition-all ${
+            className={`rounded-lg shadow p-3 transition-all ${
               filter === 'all'
                 ? 'bg-blue-600 text-white scale-105'
                 : 'bg-white text-gray-900 hover:shadow-lg'
             }`}
           >
-            <p className={`text-sm ${filter === 'all' ? 'text-blue-100' : 'text-gray-600'}`}>
+            <p className={`text-xs sm:text-sm ${filter === 'all' ? 'text-blue-100' : 'text-gray-600'}`}>
               סה"כ הצעות
             </p>
-            <p className={`text-3xl font-bold ${filter === 'all' ? 'text-white' : 'text-gray-900'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold ${filter === 'all' ? 'text-white' : 'text-gray-900'}`}>
               {quotes.length}
             </p>
           </button>
           <button
             onClick={() => setFilter('approved')}
-            className={`rounded-lg shadow p-4 transition-all ${
+            className={`rounded-lg shadow p-3 transition-all ${
               filter === 'approved'
                 ? 'bg-green-600 text-white scale-105'
                 : 'bg-white text-gray-900 hover:shadow-lg'
             }`}
           >
-            <p className={`text-sm ${filter === 'approved' ? 'text-green-100' : 'text-gray-600'}`}>
+            <p className={`text-xs sm:text-sm ${filter === 'approved' ? 'text-green-100' : 'text-gray-600'}`}>
               אושר
             </p>
-            <p className={`text-3xl font-bold ${filter === 'approved' ? 'text-white' : 'text-green-600'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold ${filter === 'approved' ? 'text-white' : 'text-green-600'}`}>
               {quotes.filter((q) => q.status === 'approved').length}
             </p>
           </button>
           <button
             onClick={() => setFilter('pending')}
-            className={`rounded-lg shadow p-4 transition-all ${
+            className={`rounded-lg shadow p-3 transition-all ${
               filter === 'pending'
                 ? 'bg-yellow-600 text-white scale-105'
                 : 'bg-white text-gray-900 hover:shadow-lg'
             }`}
           >
-            <p className={`text-sm ${filter === 'pending' ? 'text-yellow-100' : 'text-gray-600'}`}>
+            <p className={`text-xs sm:text-sm ${filter === 'pending' ? 'text-yellow-100' : 'text-gray-600'}`}>
               בהמתנה
             </p>
-            <p className={`text-3xl font-bold ${filter === 'pending' ? 'text-white' : 'text-yellow-600'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold ${filter === 'pending' ? 'text-white' : 'text-yellow-600'}`}>
               {quotes.filter((q) => q.status === 'pending').length}
             </p>
           </button>
