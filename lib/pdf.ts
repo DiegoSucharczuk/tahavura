@@ -1,0 +1,149 @@
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Quote } from './types';
+
+export async function generateQuotePDF(
+  quote: Quote,
+  elementId?: string
+): Promise<void> {
+  try {
+    // Create a temporary container div
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = '700px';
+    container.style.padding = '30px';
+    container.style.backgroundColor = 'white';
+    container.style.direction = 'rtl';
+    container.style.fontFamily = 'Arial, sans-serif';
+    container.style.lineHeight = '1.5';
+    
+    // Get customer initials
+    const nameParts = quote.customerName.trim().split(' ');
+    const firstInitial = nameParts[0]?.[0]?.toUpperCase() || '';
+    const lastInitial = nameParts[nameParts.length - 1]?.[0]?.toUpperCase() || '';
+    const initials = `${firstInitial}${lastInitial}`;
+    
+    // Build HTML content
+    let html = `
+      <div style="text-align: right; direction: rtl;">
+        <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 15px 0; color: #1f2937;">הצעה</h1>
+        <hr style="border: none; border-top: 2px solid #333; margin: 15px 0;">
+        
+        <div style="margin: 15px 0;">
+          <p style="margin: 8px 0;"><strong>שם הלקוח:</strong> ${quote.customerName}</p>
+          <p style="margin: 8px 0;"><strong>מספר תעודת זהות:</strong> ${quote.idNumber}</p>
+          <p style="margin: 8px 0;"><strong>מספר רישוי רכב:</strong> ${quote.carPlate}</p>
+          <p style="margin: 8px 0;"><strong>מספר טלפון:</strong> ${quote.phoneNumber}</p>
+          <p style="margin: 8px 0;"><strong>נוצר ב-:</strong> ${quote.createdAt.toLocaleDateString('he-IL')}</p>
+          <p style="margin: 8px 0;"><strong>סטטוס:</strong> <span style="color: ${quote.status === 'approved' ? '#16a34a' : '#ca8a04'}">${quote.status === 'approved' ? '✓ אושר' : '⏳ בהמתנה'}</span></p>
+    `;
+
+    if (quote.approvedAt) {
+      html += `<p style="margin: 8px 0;"><strong>אושר ב-:</strong> ${quote.approvedAt.toLocaleDateString('he-IL')}</p>`;
+    }
+
+    html += `
+        </div>
+    `;
+
+    if (quote.notes) {
+      html += `
+        <div style="margin: 15px 0;">
+          <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0;">הערות:</h3>
+          <p style="margin: 0; white-space: pre-wrap; background: #f3f4f6; padding: 10px; border-radius: 3px; font-size: 13px;">${quote.notes}</p>
+        </div>
+      `;
+    }
+
+    if (quote.quoteImageUrl) {
+      html += `
+        <div style="margin: 15px 0; position: relative; display: inline-block;">
+          <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 8px 0;">תמונת ההצעה:</h3>
+          <img src="${quote.quoteImageUrl}" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 3px; max-height: 250px; display: block;" />
+          
+          ${quote.status === 'approved' && quote.signatureImageUrl ? `
+          <div style="position: absolute; left: -10px; bottom: 5px;">
+            <img id="signature-img" src="${quote.signatureImageUrl}" style="height: 40px; width: auto; display: block; margin: 0;" crossorigin="anonymous" />
+          </div>
+          <div style="position: absolute; left: 15px; bottom: 50px; text-align: center;">
+            <p style="margin: 0; font-size: 10px; color: #000; line-height: 1;">${quote.customerName}</p>
+          </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    html += `
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
+        <p style="margin: 0; font-size: 11px; color: #808080; text-align: center;">נוצר ב- ${new Date().toLocaleDateString('he-IL')} | מזהה הצעה: ${quote.id}</p>
+      </div>
+    `;
+
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    // Wait for all images to load
+    const images = container.querySelectorAll('img');
+    const imagePromises = Array.from(images).map(img => {
+      return new Promise<void>((resolve) => {
+        if (img.complete) {
+          resolve();
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        }
+      });
+    });
+
+    await Promise.all(imagePromises);
+
+    // Capture the HTML as canvas
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      allowTaint: true,
+      useCORS: true,
+      logging: false,
+      ignoreElements: (element) => {
+        return false;
+      },
+    });
+
+    // Remove the temporary container
+    document.body.removeChild(container);
+
+    // Convert canvas to PDF
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    const imgWidth = pageWidth - 20;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = 10;
+
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight - 20;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 20;
+    }
+
+    pdf.save(`quote-${quote.id}.pdf`);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw new Error('Failed to generate PDF');
+  }
+}
+

@@ -1,0 +1,10 @@
+{
+  "name": "Garage Quote Approval",
+  "short_name": "QuoteApp",
+  "description": "Mobile app for creating and approving garage quotes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary"
+}
