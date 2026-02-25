@@ -51,8 +51,19 @@ export default function SummaryPage() {
     const message = encodeURIComponent(
       `שלום ${quote.customerName}, הנה ההצעה שלך עבור הרכב ${quote.carPlate}: ${approvalUrl}`
     );
-    const whatsappUrl = `https://wa.me/${quote.phoneNumber.replace(/\D/g, '')}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
+    const cleanPhone = quote.phoneNumber.replace(/\D/g, '');
+
+    // Use whatsapp:// protocol to open app directly
+    const whatsappUrl = `whatsapp://send?phone=${cleanPhone}&text=${message}`;
+
+    // Fallback to wa.me if app not installed
+    window.location.href = whatsappUrl;
+
+    // Fallback after 1 second if app doesn't open
+    setTimeout(() => {
+      const webUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+      window.open(webUrl, '_blank');
+    }, 1000);
   };
 
   const handleGeneratePDF = async () => {
