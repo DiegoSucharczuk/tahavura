@@ -5,6 +5,7 @@ import { getUserById } from '@/lib/auth-helpers';
 import { hashPassword } from '@/lib/password';
 import { adminDb } from '@/lib/firebase-admin-simple';
 import { validateEmail, validatePassword, validateName, sanitizeString } from '@/lib/validation';
+import { checkRateLimit, getResetTimeRemaining } from '@/lib/rate-limit';
 
 // GET all users (admin only)
 export async function GET(request: NextRequest) {
@@ -76,6 +77,23 @@ export async function POST(request: NextRequest) {
     const currentUser = await getUserById(payload.userId);
     if (!currentUser || currentUser.role !== 'admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    // Rate limiting: 5 new users per hour per admin
+    const rateLimitKey = `user-create:${payload.userId}`;
+    const rateLimitCheck = checkRateLimit(rateLimitKey, 5, 60 * 60 * 1000); // 5 attempts per 1 hour
+
+    if (!rateLimitCheck.allowed) {
+      const remainingSeconds = getResetTimeRemaining(rateLimitKey);
+      const remainingMinutes = Math.ceil(remainingSeconds / 60);
+
+      return NextResponse.json(
+        {
+          error: `הגעת למגבלת יצירת משתמשים (5 בשעה). נסה שוב בעוד ${remainingMinutes} דקות`,
+          retryAfter: remainingSeconds
+        },
+        { status: 429 } // 429 = Too Many Requests
+      );
     }
 
     // Parse request body

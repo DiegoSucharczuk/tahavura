@@ -10,6 +10,7 @@ import {
   validateQuoteNumber,
   sanitizeString,
 } from '@/lib/validation';
+import { checkRateLimit, getResetTimeRemaining } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +26,23 @@ export async function POST(request: NextRequest) {
     const payload = verifyToken(token);
     if (!payload) {
       return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
+    }
+
+    // Rate limiting: 10 quotes per hour per user
+    const rateLimitKey = `quote-create:${payload.userId}`;
+    const rateLimitCheck = checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000); // 10 attempts per 1 hour
+
+    if (!rateLimitCheck.allowed) {
+      const remainingSeconds = getResetTimeRemaining(rateLimitKey);
+      const remainingMinutes = Math.ceil(remainingSeconds / 60);
+
+      return NextResponse.json(
+        {
+          error: `הגעת למגבלת יצירת הצעות (10 בשעה). נסה שוב בעוד ${remainingMinutes} דקות`,
+          retryAfter: remainingSeconds
+        },
+        { status: 429 } // 429 = Too Many Requests
+      );
     }
 
     // Parse request body
