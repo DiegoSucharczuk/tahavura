@@ -283,13 +283,6 @@ export default function ApprovalPage() {
                 </p>
               </div>
             </div>
-
-            {quote.notes && (
-              <div className="mt-6 pt-6 border-t">
-                <p className="text-sm text-gray-600">הערות</p>
-                <p className="mt-2 text-gray-800 whitespace-pre-wrap">{quote.notes}</p>
-              </div>
-            )}
           </div>
 
           {/* Notes Section (moved here, between image and signature) */}

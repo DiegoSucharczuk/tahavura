@@ -172,14 +172,6 @@ export default function QuoteDetailPage() {
                 )}
               </div>
             )}
-
-            {/* Notes Section (between image and signature) */}
-            {quote.notes && (
-              <div className="bg-white rounded-lg shadow-lg p-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">הערות</h2>
-                <p className="text-gray-700 break-words whitespace-pre-wrap">{quote.notes}</p>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Details */}
