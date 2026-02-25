@@ -17,6 +17,7 @@ export default function QuotesListPage() {
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all');
   const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
+  const [isMobile, setIsMobile] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -35,6 +36,12 @@ export default function QuotesListPage() {
 
   useEffect(() => {
     loadQuotes();
+
+    // Detect if mobile device
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|windows phone/.test(userAgent);
+    setIsMobile(isMobileDevice);
+
     // Get user role from localStorage
     const role = localStorage.getItem('userRole') as 'admin' | 'worker' | null;
     if (role) {
@@ -165,7 +172,7 @@ export default function QuotesListPage() {
             >
               + הצעה חדשה
             </Link>
-            {userRole === 'admin' && (
+            {!isMobile && userRole === 'admin' && (
               <Link
                 href="/internal-dashboard/users"
                 className="py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
