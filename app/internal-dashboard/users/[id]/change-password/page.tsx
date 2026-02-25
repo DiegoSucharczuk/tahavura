@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { getUserByEmail, updateUserPassword, getAllUsers } from '@/lib/firestore';
-import { hashPassword, verifyPassword } from '@/lib/password';
+import { updateUserPassword, getAllUsers } from '@/lib/firestore';
 import { User } from '@/lib/types';
 
 export default function ChangePasswordPage() {
@@ -74,19 +73,8 @@ export default function ChangePasswordPage() {
         return;
       }
 
-      // Verify current password
-      const isCurrentPasswordValid = await verifyPassword(currentPassword, user.passwordHash);
-      if (!isCurrentPasswordValid) {
-        setError('הסיסמה הנוכחית שגויה');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Hash new password
-      const newPasswordHash = await hashPassword(newPassword);
-
-      // Update password in Firestore
-      await updateUserPassword(userId, newPasswordHash);
+      // Update password via API (validates current password server-side)
+      await updateUserPassword(userId, newPassword, currentPassword);
 
       setSuccess('סיסמה שונתה בהצלחה!');
       setCurrentPassword('');
@@ -97,9 +85,9 @@ export default function ChangePasswordPage() {
       setTimeout(() => {
         router.push('/internal-dashboard/users');
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing password:', error);
-      setError('שגיאה בשינוי הסיסמה');
+      setError(error.message || 'שגיאה בשינוי הסיסמה');
     } finally {
       setIsSubmitting(false);
     }

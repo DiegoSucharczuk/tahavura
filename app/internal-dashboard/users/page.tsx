@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Edit2, LogOut, Lock, Phone, ArrowLeft } from 'lucide-react';
 import { User } from '@/lib/types';
 import { getAllUsers, deleteUser, createUser } from '@/lib/firestore';
-import { hashPassword } from '@/lib/password';
 
 export default function UsersPage() {
   const router = useRouter();
@@ -108,11 +107,8 @@ export default function UsersPage() {
         return;
       }
 
-      // Hash password
-      const passwordHash = await hashPassword(formData.password);
-
-      // Create user
-      await createUser(formData.email, passwordHash, formData.name, formData.role);
+      // Create user (password hashing happens server-side now)
+      await createUser(formData.email, formData.password, formData.name, formData.role);
 
       setSuccess('משתמש נוצר בהצלחה');
       setFormData({ email: '', name: '', password: '', role: 'worker' });
@@ -120,9 +116,9 @@ export default function UsersPage() {
 
       // Reload users
       setTimeout(() => loadUsers(), 500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating user:', error);
-      setError('שגיאה ביצירת משתמש');
+      setError(error.message || 'שגיאה ביצירת משתמש');
     } finally {
       setIsCreating(false);
     }

@@ -3,9 +3,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn } from 'lucide-react';
-import { getUserByEmail } from '@/lib/firestore';
-import { verifyPassword } from '@/lib/password';
-import { updateLastLogin } from '@/lib/firestore';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,30 +17,25 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Get user from Firestore
-      const user = await getUserByEmail(email);
+      // Call API route for authentication
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!user) {
-        setError('אימייל או סיסמה שגויים');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'שגיאה בהתחברות');
         setIsLoading(false);
         return;
       }
 
-      // Verify password
-      const isPasswordValid = await verifyPassword(password, user.passwordHash);
-
-      if (!isPasswordValid) {
-        setError('אימייל או סיסמה שגויים');
-        setIsLoading(false);
-        return;
-      }
-
-      // Update last login
-      await updateLastLogin(user.id);
-
-      // Set auth cookie with user ID from Firestore
-      document.cookie = `__session=${user.id}; path=/; max-age=86400; secure; samesite=strict`;
-      document.cookie = `__userEmail=${user.email}; path=/; max-age=86400; secure; samesite=strict`;
+      // Set JWT token as cookie
+      document.cookie = `__session=${data.token}; path=/; max-age=86400; secure; samesite=strict`;
 
       // Redirect to dashboard
       router.push('/internal-dashboard');

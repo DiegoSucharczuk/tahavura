@@ -1,239 +1,142 @@
+// Client-side Firestore operations
+// Now using API routes for secure database access
+
 import { Quote, QuoteFormData, User, UserFormData } from './types';
-import { db } from './firebase';
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  Timestamp,
-} from 'firebase/firestore';
 
-const QUOTES_KEY = 'tahavura_quotes';
-const QUOTES_COLLECTION = 'quotes';
+// =====================
+// QUOTE OPERATIONS
+// =====================
 
-// Get all quotes from Firestore and/or localStorage
+/**
+ * Get all quotes (authenticated users only)
+ * Calls API route that validates session
+ */
 export async function getAllQuotes(): Promise<Quote[]> {
   try {
-    // Try to fetch from Firestore
-    const querySnapshot = await getDocs(collection(db, QUOTES_COLLECTION));
-    const quotes: Quote[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      quotes.push({
-        id: doc.id,
-        customerName: data.customerName,
-        carPlate: data.carPlate,
-        phoneNumber: data.phoneNumber,
-        quoteNumber: data.quoteNumber || '',
-        quoteAmount: data.quoteAmount || '',
-        quoteImageUrl: data.quoteImageUrl,
-        notes: data.notes,
-        status: data.status,
-        signatureImageUrl: data.signatureImageUrl || null,
-        idNumber: data.idNumber || '',
-        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
-        approvedAt: data.approvedAt?.toDate?.() || (data.approvedAt ? new Date(data.approvedAt) : null),
-      } as Quote);
+    const response = await fetch('/api/quotes', {
+      credentials: 'include', // Send cookies
     });
 
-    // Save to localStorage as cache
-    const quotesMap: Record<string, any> = {};
-    quotes.forEach((q) => {
-      quotesMap[q.id] = {
-        id: q.id,
-        customerName: q.customerName,
-        carPlate: q.carPlate,
-        phoneNumber: q.phoneNumber,
-        quoteNumber: q.quoteNumber,
-        quoteAmount: q.quoteAmount,
-        quoteImageUrl: q.quoteImageUrl,
-        notes: q.notes,
-        status: q.status,
-        signatureImageUrl: q.signatureImageUrl,
-        idNumber: q.idNumber,
-        createdAt: q.createdAt.toISOString(),
-        approvedAt: q.approvedAt?.toISOString() || null,
-      };
-    });
-    localStorage.setItem(QUOTES_KEY, JSON.stringify(quotesMap));
+    if (!response.ok) {
+      throw new Error('Failed to fetch quotes');
+    }
 
-    return quotes;
-  } catch (error) {
-    console.error('Error fetching from Firestore, using localStorage:', error);
-    // Fallback to localStorage if Firestore fails
-    const data = localStorage.getItem(QUOTES_KEY);
-    const quotesMap = data ? JSON.parse(data) : {};
-    
-    const quotes = Object.values(quotesMap).map((q: any) => ({
+    const { quotes } = await response.json();
+
+    return quotes.map((q: any) => ({
       ...q,
       createdAt: new Date(q.createdAt),
       approvedAt: q.approvedAt ? new Date(q.approvedAt) : null,
-    })) as Quote[];
-
-    return quotes;
+    }));
+  } catch (error) {
+    console.error('Error fetching quotes:', error);
+    return [];
   }
 }
 
-// Get single quote
+/**
+ * Get single quote by ID (public for customer approval)
+ */
 export async function getQuote(quoteId: string): Promise<Quote | null> {
   try {
-    // Try Firestore first
-    const docRef = doc(db, QUOTES_COLLECTION, quoteId);
-    const docSnap = await getDoc(docRef);
+    const response = await fetch(`/api/quotes/${quoteId}`);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      console.log('🔍 Firestore data loaded:', { quoteNumber: data.quoteNumber, quoteAmount: data.quoteAmount });
-      const quote = {
-        id: docSnap.id,
-        customerName: data.customerName,
-        carPlate: data.carPlate,
-        phoneNumber: data.phoneNumber,
-        quoteNumber: data.quoteNumber || '',
-        quoteAmount: data.quoteAmount || '',
-        quoteImageUrl: data.quoteImageUrl,
-        notes: data.notes,
-        status: data.status,
-        signatureImageUrl: data.signatureImageUrl || null,
-        idNumber: data.idNumber || '',
-        createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
-        approvedAt: data.approvedAt?.toDate?.() || (data.approvedAt ? new Date(data.approvedAt) : null),
-      } as Quote;
-
-      // Update localStorage cache
-      const quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || '{}');
-      quotes[quoteId] = {
-        id: quote.id,
-        customerName: quote.customerName,
-        carPlate: quote.carPlate,
-        phoneNumber: quote.phoneNumber,
-        quoteNumber: quote.quoteNumber,
-        quoteAmount: quote.quoteAmount,
-        quoteImageUrl: quote.quoteImageUrl,
-        notes: quote.notes,
-        status: quote.status,
-        signatureImageUrl: quote.signatureImageUrl,
-        idNumber: quote.idNumber,
-        createdAt: quote.createdAt.toISOString(),
-        approvedAt: quote.approvedAt?.toISOString() || null,
-      };
-      localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
-
-      return quote;
+    if (!response.ok) {
+      return null;
     }
-  } catch (error) {
-    console.error('Error fetching from Firestore, checking localStorage:', error);
-  }
 
-  // Fallback to localStorage
-  const quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || '{}');
-  const quoteData = quotes[quoteId];
-  
-  if (!quoteData) {
+    const { quote } = await response.json();
+
+    return {
+      ...quote,
+      createdAt: new Date(quote.createdAt),
+      approvedAt: quote.approvedAt ? new Date(quote.approvedAt) : null,
+    };
+  } catch (error) {
+    console.error('Error fetching quote:', error);
     return null;
   }
-
-  return {
-    ...quoteData,
-    createdAt: new Date(quoteData.createdAt),
-    approvedAt: quoteData.approvedAt ? new Date(quoteData.approvedAt) : null,
-  } as Quote;
 }
 
-// Create new quote
+/**
+ * Create new quote (authenticated users only)
+ */
 export async function createQuote(data: QuoteFormData): Promise<string> {
-  const quoteId = `quote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  const quoteData = {
-    customerName: data.customerName,
-    carPlate: data.carPlate,
-    phoneNumber: data.phoneNumber,
-    quoteNumber: data.quoteNumber || '',
-    quoteAmount: data.quoteAmount || '',
-    quoteImageUrl: data.quoteImageUrl,
-    notes: data.notes,
-    idNumber: data.idNumber || '',
-    status: 'pending',
-    signatureImageUrl: null,
-    createdAt: Timestamp.now(),
-    approvedAt: null,
-  };
-
   try {
-    // Save to Firestore
-    await setDoc(doc(db, QUOTES_COLLECTION, quoteId), quoteData);
+    const response = await fetch('/api/quotes/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create quote');
+    }
+
+    const { quoteId } = await response.json();
+    return quoteId;
   } catch (error) {
-    console.error('Error saving to Firestore, saving to localStorage:', error);
+    console.error('Error creating quote:', error);
+    throw error;
   }
-
-  // Always save to localStorage for offline access
-  const quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || '{}');
-  quotes[quoteId] = {
-    id: quoteId,
-    ...data,
-    idNumber: data.idNumber || '',
-    status: 'pending',
-    signatureImageUrl: null,
-    createdAt: new Date().toISOString(),
-    approvedAt: null,
-  };
-  localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
-
-  return quoteId;
 }
 
-// Update quote with signature
+/**
+ * Update quote with signature (public for customer approval)
+ */
 export async function updateQuoteWithSignature(
   quoteId: string,
   signatureImageUrl: string,
   idNumber?: string
 ): Promise<void> {
-  const updateData = {
-    status: 'approved',
-    signatureImageUrl,
-    approvedAt: Timestamp.now(),
-    ...(idNumber && { idNumber }),
-  };
-
   try {
-    // Update Firestore
-    await updateDoc(doc(db, QUOTES_COLLECTION, quoteId), updateData);
-  } catch (error) {
-    console.error('Error updating Firestore, updating localStorage:', error);
-  }
+    const response = await fetch(`/api/quotes/${quoteId}/approve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ signatureImageUrl, idNumber }),
+    });
 
-  // Always update localStorage
-  const quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || '{}');
-  if (quotes[quoteId]) {
-    quotes[quoteId] = {
-      ...quotes[quoteId],
-      ...updateData,
-      approvedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+    if (!response.ok) {
+      throw new Error('Failed to approve quote');
+    }
+  } catch (error) {
+    console.error('Error approving quote:', error);
+    throw error;
   }
 }
 
-// Delete quote
+/**
+ * Delete quote (authenticated users only)
+ */
 export async function deleteQuote(quoteId: string): Promise<void> {
   try {
-    // Delete from Firestore
-    await deleteDoc(doc(db, QUOTES_COLLECTION, quoteId));
-  } catch (error) {
-    console.error('Error deleting from Firestore, deleting from localStorage:', error);
-  }
+    const response = await fetch(`/api/quotes/${quoteId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
 
-  // Always delete from localStorage
-  const quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || '{}');
-  delete quotes[quoteId];
-  localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+    if (!response.ok) {
+      throw new Error('Failed to delete quote');
+    }
+  } catch (error) {
+    console.error('Error deleting quote:', error);
+    throw error;
+  }
 }
 
-// Upload image (stores base64 directly in quote, no separate storage)
+// =====================
+// IMAGE UPLOAD
+// =====================
+
+/**
+ * Upload image (stores base64 directly)
+ * NOTE: For production, consider moving to Firebase Storage
+ */
 export async function uploadImage(
   file: File | Blob,
   path: string
@@ -262,140 +165,127 @@ export async function uploadImageFromDataUrl(
 // USER MANAGEMENT
 // =====================
 
-const USERS_COLLECTION = 'users';
-
-// Get all users
+/**
+ * Get all users (admin only)
+ */
 export async function getAllUsers(): Promise<User[]> {
   try {
-    const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
-    const users: User[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      users.push({
-        id: doc.id,
-        email: data.email,
-        name: data.name,
-        passwordHash: data.passwordHash,
-        role: data.role || 'worker',
-        createdAt: data.createdAt?.toDate?.() || new Date(),
-        lastLogin: data.lastLogin?.toDate?.() || null,
-      } as User);
+    const response = await fetch('/api/users', {
+      credentials: 'include',
     });
 
-    return users.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
+    }
+
+    const { users } = await response.json();
+
+    return users.map((u: any) => ({
+      ...u,
+      createdAt: new Date(u.createdAt),
+      lastLogin: u.lastLogin ? new Date(u.lastLogin) : null,
+    }));
   } catch (error) {
-    console.error('Error getting users:', error);
+    console.error('Error fetching users:', error);
     return [];
   }
 }
 
-// Get user by email
-export async function getUserByEmail(email: string): Promise<User | null> {
-  try {
-    const querySnapshot = await getDocs(collection(db, USERS_COLLECTION));
-    let foundUser: User | null = null;
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      if (data.email === email) {
-        foundUser = {
-          id: doc.id,
-          email: data.email,
-          name: data.name,
-          passwordHash: data.passwordHash,
-          role: data.role || 'worker',
-          createdAt: data.createdAt?.toDate?.() || new Date(),
-          lastLogin: data.lastLogin?.toDate?.() || null,
-        } as User;
-      }
-    });
-
-    return foundUser;
-  } catch (error) {
-    console.error('Error getting user by email:', error);
-    return null;
-  }
-}
-
-// Create new user
+/**
+ * Create new user (admin only)
+ * Password is hashed server-side
+ */
 export async function createUser(
   email: string,
-  passwordHash: string,
+  password: string,
   name: string,
   role: 'admin' | 'worker' = 'worker'
 ): Promise<string> {
   try {
-    const docRef = doc(collection(db, USERS_COLLECTION));
-    
-    await setDoc(docRef, {
-      email,
-      name,
-      passwordHash,
-      role,
-      createdAt: Timestamp.now(),
-      lastLogin: null,
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, password, name, role }),
     });
 
-    return docRef.id;
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to create user');
+    }
+
+    const { userId } = await response.json();
+    return userId;
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
   }
 }
 
-// Update user
-export async function updateUser(
-  userId: string,
-  updates: Partial<User>
-): Promise<void> {
+/**
+ * Delete user (admin only)
+ */
+export async function deleteUser(userId: string): Promise<void> {
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
-    
-    const dataToUpdate: any = { ...updates };
-    
-    // Remove fields that shouldn't be updated
-    delete dataToUpdate.id;
-    delete dataToUpdate.createdAt;
+    const response = await fetch(`/api/users/${userId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
 
-    await updateDoc(userRef, dataToUpdate);
+    if (!response.ok) {
+      throw new Error('Failed to delete user');
+    }
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('Error deleting user:', error);
     throw error;
   }
 }
 
-// Update user password
+/**
+ * Update user password
+ * For own password: requires current password
+ * For admin changing others: no current password needed
+ */
 export async function updateUserPassword(
   userId: string,
-  newPasswordHash: string
+  newPassword: string,
+  currentPassword?: string
 ): Promise<void> {
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
-    await updateDoc(userRef, { passwordHash: newPasswordHash });
+    const response = await fetch(`/api/users/${userId}/password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ newPassword, currentPassword }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to update password');
+    }
   } catch (error) {
     console.error('Error updating password:', error);
     throw error;
   }
 }
 
-// Update last login
-export async function updateLastLogin(userId: string): Promise<void> {
-  try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
-    await updateDoc(userRef, { lastLogin: Timestamp.now() });
-  } catch (error) {
-    console.error('Error updating last login:', error);
-    // Don't throw - this is not critical
-  }
+// Legacy functions (kept for backwards compatibility)
+export async function getUserByEmail(email: string): Promise<User | null> {
+  console.warn('getUserByEmail is deprecated - use API routes instead');
+  return null;
 }
 
-// Delete user
-export async function deleteUser(userId: string): Promise<void> {
-  try {
-    await deleteDoc(doc(db, USERS_COLLECTION, userId));
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error;
-  }
+export async function updateUser(
+  userId: string,
+  updates: Partial<User>
+): Promise<void> {
+  console.warn('updateUser is deprecated - use specific API routes instead');
+}
+
+export async function updateLastLogin(userId: string): Promise<void> {
+  // Now handled server-side in login API
 }
