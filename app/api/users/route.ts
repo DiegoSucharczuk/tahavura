@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/jwt';
 import { getUserById } from '@/lib/auth-helpers';
 import { hashPassword } from '@/lib/password';
 import { adminDb } from '@/lib/firebase-admin-simple';
+import { validateEmail, validatePassword, validateName, sanitizeString } from '@/lib/validation';
 
 // GET all users (admin only)
 export async function GET(request: NextRequest) {
@@ -83,28 +84,56 @@ export async function POST(request: NextRequest) {
 
     if (!email || !name || !password || !role) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'שדות חובה חסרים' },
+        { status: 400 }
+      );
+    }
+
+    // Server-side validation
+    const nameValidation = validateName(name);
+    if (!nameValidation.valid) {
+      return NextResponse.json(
+        { error: `שם: ${nameValidation.error}` },
+        { status: 400 }
+      );
+    }
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return NextResponse.json(
+        { error: `אימייל: ${emailValidation.error}` },
+        { status: 400 }
+      );
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: `סיסמה: ${passwordValidation.error}` },
         { status: 400 }
       );
     }
 
     if (!['admin', 'worker'].includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role' },
+        { error: 'תפקיד לא תקין' },
         { status: 400 }
       );
     }
 
+    // Clean email
+    const cleanEmail = email.trim().toLowerCase();
+
     // Check if email already exists
     const existingUsers = await adminDb
       .collection('users')
-      .where('email', '==', email)
+      .where('email', '==', cleanEmail)
       .limit(1)
       .get();
 
     if (!existingUsers.empty) {
       return NextResponse.json(
-        { error: 'Email already exists' },
+        { error: 'אימייל כבר קיים במערכת' },
         { status: 409 }
       );
     }
@@ -112,12 +141,12 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user document
+    // Create user document with cleaned data
     const docRef = adminDb.collection('users').doc();
 
     await docRef.set({
-      email,
-      name,
+      email: cleanEmail,
+      name: sanitizeString(name.trim()),
       passwordHash,
       role,
       createdAt: new Date(),

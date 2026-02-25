@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/jwt';
 import { getUserById } from '@/lib/auth-helpers';
 import { verifyPassword, hashPassword } from '@/lib/password';
 import { adminDb } from '@/lib/firebase-admin-simple';
+import { validatePassword } from '@/lib/validation';
 
 // UPDATE user password
 export async function POST(
@@ -46,9 +47,18 @@ export async function POST(
     const body = await request.json();
     const { currentPassword, newPassword } = body;
 
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'סיסמה חדשה נדרשת' },
+        { status: 400 }
+      );
+    }
+
+    // Server-side password validation
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: passwordValidation.error },
         { status: 400 }
       );
     }
