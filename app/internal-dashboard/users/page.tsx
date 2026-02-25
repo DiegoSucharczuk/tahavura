@@ -6,6 +6,7 @@ import { Plus, Trash2, Edit2, LogOut, Lock, Phone, Unlock, Shield } from 'lucide
 import { User } from '@/lib/types';
 import { getAllUsers, deleteUser, createUser } from '@/lib/firestore';
 import { BackButton } from '@/components/BackButton';
+import { validateEmail, validatePassword, validateName } from '@/lib/validation';
 
 interface LockedUser {
   identifier: string;
@@ -29,8 +30,10 @@ export default function UsersPage() {
     password: '',
     role: 'worker' as 'admin' | 'worker',
   });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -136,6 +139,16 @@ export default function UsersPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const handlePasswordChange = (password: string) => {
+    setFormData({ ...formData, password });
+    if (password.length > 0) {
+      const validation = validatePassword(password);
+      setPasswordStrength(validation.strength || null);
+    } else {
+      setPasswordStrength(null);
+    }
+  };
+
   // אם טרם בדקנו - הצג טוען
   if (isMobile === null || isAdmin === null) {
     return (
@@ -177,20 +190,39 @@ export default function UsersPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setValidationErrors({});
+
+    // Validate all fields
+    const nameValidation = validateName(formData.name);
+    const emailValidation = validateEmail(formData.email);
+    const passwordValidation = validatePassword(formData.password);
+
+    const errors: Record<string, string> = {};
+
+    if (!nameValidation.valid) errors.name = nameValidation.error!;
+    if (!emailValidation.valid) errors.email = emailValidation.error!;
+    if (!passwordValidation.valid) errors.password = passwordValidation.error!;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setError('אנא תקן את השגיאות בטופס');
+      return;
+    }
+
     setIsCreating(true);
 
     try {
-      if (!formData.email || !formData.name || !formData.password) {
-        setError('אנא מלא את כל השדות');
-        setIsCreating(false);
-        return;
-      }
-
       // Create user (password hashing happens server-side now)
-      await createUser(formData.email, formData.password, formData.name, formData.role);
+      await createUser(
+        formData.email.trim().toLowerCase(),
+        formData.password,
+        formData.name.trim(),
+        formData.role
+      );
 
       setSuccess('משתמש נוצר בהצלחה');
       setFormData({ email: '', name: '', password: '', role: 'worker' });
+      setPasswordStrength(null);
       setShowCreateForm(false);
 
       // Reload users
@@ -330,10 +362,15 @@ export default function UsersPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="שם המשתמש"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     disabled={isCreating}
                     required
                   />
+                  {validationErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -344,10 +381,15 @@ export default function UsersPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="user@example.com"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     disabled={isCreating}
                     required
                   />
+                  {validationErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -356,12 +398,31 @@ export default function UsersPage() {
                   <input
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      validationErrors.password ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     disabled={isCreating}
                     required
                   />
+                  {validationErrors.password && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                  )}
+                  {passwordStrength && !validationErrors.password && (
+                    <div className="mt-2">
+                      <div className="flex gap-1">
+                        <div className={`h-1 flex-1 rounded ${passwordStrength === 'weak' || passwordStrength === 'medium' || passwordStrength === 'strong' ? 'bg-red-500' : 'bg-gray-300'}`}></div>
+                        <div className={`h-1 flex-1 rounded ${passwordStrength === 'medium' || passwordStrength === 'strong' ? 'bg-yellow-500' : 'bg-gray-300'}`}></div>
+                        <div className={`h-1 flex-1 rounded ${passwordStrength === 'strong' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-600">
+                        חוזק הסיסמה: {passwordStrength === 'weak' && 'חלשה'}
+                        {passwordStrength === 'medium' && 'בינונית'}
+                        {passwordStrength === 'strong' && 'חזקה'}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

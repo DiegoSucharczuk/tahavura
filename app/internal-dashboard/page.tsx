@@ -6,6 +6,13 @@ import Link from 'next/link';
 import { Send, List, Users, LogOut } from 'lucide-react';
 import { CameraInput } from '@/components/CameraInput';
 import { createQuote } from '@/lib/firestore';
+import {
+  validateCarPlate,
+  validatePhoneNumber,
+  validateQuoteAmount,
+  validateName,
+  validateQuoteNumber,
+} from '@/lib/validation';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -24,6 +31,7 @@ export default function Dashboard() {
   const [imageBase64, setImageBase64] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     // בדוק אם זה מכשיר נייד
@@ -46,6 +54,47 @@ export default function Dashboard() {
       ...prev,
       [name]: value,
     }));
+    // Clear error for this field when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateField = (name: string, value: string) => {
+    let result;
+    switch (name) {
+      case 'customerName':
+        result = validateName(value);
+        break;
+      case 'carPlate':
+        result = validateCarPlate(value);
+        break;
+      case 'phoneNumber':
+        result = validatePhoneNumber(value);
+        break;
+      case 'quoteNumber':
+        result = validateQuoteNumber(value);
+        break;
+      case 'quoteAmount':
+        result = validateQuoteAmount(value);
+        break;
+      default:
+        return;
+    }
+
+    if (!result.valid && result.error) {
+      setValidationErrors((prev) => ({ ...prev, [name]: result.error! }));
+    } else {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleImageCapture = useCallback((file: File) => {
@@ -85,30 +134,51 @@ export default function Dashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.customerName || !formData.carPlate || !formData.phoneNumber || !formData.quoteNumber || !formData.quoteAmount) {
-      alert('אנא מלא את כל השדות הנדרשים');
-      return;
-    }
+    // Validate all fields
+    const nameValidation = validateName(formData.customerName);
+    const carPlateValidation = validateCarPlate(formData.carPlate);
+    const phoneValidation = validatePhoneNumber(formData.phoneNumber);
+    const quoteNumValidation = validateQuoteNumber(formData.quoteNumber);
+    const amountValidation = validateQuoteAmount(formData.quoteAmount);
+
+    const errors: Record<string, string> = {};
+
+    if (!nameValidation.valid) errors.customerName = nameValidation.error!;
+    if (!carPlateValidation.valid) errors.carPlate = carPlateValidation.error!;
+    if (!phoneValidation.valid) errors.phoneNumber = phoneValidation.error!;
+    if (!quoteNumValidation.valid) errors.quoteNumber = quoteNumValidation.error!;
+    if (!amountValidation.valid) errors.quoteAmount = amountValidation.error!;
 
     // Check if image was uploaded
     if (!imageBase64 || imageBase64.length === 0) {
-      alert('אנא העלה תמונה של ההצעה');
+      errors.image = 'אנא העלה תמונה של ההצעה';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      alert('אנא תקן את השגיאות בטופס');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Use the base64 stored in separate state
-      const imageUrl = imageBase64 || '';
-      
-      console.log('📤 Creating quote with image:', imageUrl ? '✅ YES' : '❌ NO');
-      console.log('📤 Image URL length:', imageUrl.length);
+      // Use cleaned/validated data
+      const cleanedData = {
+        customerName: formData.customerName.trim(),
+        carPlate: carPlateValidation.cleaned,
+        phoneNumber: phoneValidation.cleaned,
+        quoteNumber: formData.quoteNumber.trim(),
+        quoteAmount: amountValidation.cleaned,
+        notes: formData.notes.trim(),
+        quoteImageUrl: imageBase64,
+      };
+
+      console.log('📤 Creating quote with validated data');
+      console.log('📤 Cleaned car plate:', cleanedData.carPlate);
+      console.log('📤 Cleaned phone:', cleanedData.phoneNumber);
 
       // Create quote document in Firestore
-      const quoteId = await createQuote({
-        ...formData,
-        quoteImageUrl: imageUrl,
-      });
+      const quoteId = await createQuote(cleanedData);
 
       console.log('✅ Quote created:', quoteId);
       
@@ -180,11 +250,17 @@ export default function Dashboard() {
                 name="customerName"
                 value={formData.customerName}
                 onChange={handleInputChange}
+                onBlur={(e) => validateField('customerName', e.target.value)}
                 placeholder="הזן שם הלקוח"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  validationErrors.customerName ? 'border-red-500' : 'border-gray-300'
+                }`}
                 disabled={isLoading}
                 required
               />
+              {validationErrors.customerName && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.customerName}</p>
+              )}
             </div>
 
             {/* Car License Plate */}
@@ -198,11 +274,18 @@ export default function Dashboard() {
                 name="carPlate"
                 value={formData.carPlate}
                 onChange={handleInputChange}
-                placeholder="למשל, ABC-1234"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onBlur={(e) => validateField('carPlate', e.target.value)}
+                placeholder="למשל, 1234567 או 12-345-67"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  validationErrors.carPlate ? 'border-red-500' : 'border-gray-300'
+                }`}
                 disabled={isLoading}
                 required
               />
+              {validationErrors.carPlate && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.carPlate}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">ניתן להזין עם או בלי מקפים</p>
             </div>
 
             {/* Phone Number */}
@@ -216,11 +299,17 @@ export default function Dashboard() {
                 name="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={handleInputChange}
-                placeholder="+972501234567"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onBlur={(e) => validateField('phoneNumber', e.target.value)}
+                placeholder="0501234567 או +972501234567"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  validationErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                }`}
                 disabled={isLoading}
                 required
               />
+              {validationErrors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
+              )}
             </div>
 
             {/* Quote Number */}
@@ -234,11 +323,17 @@ export default function Dashboard() {
                 name="quoteNumber"
                 value={formData.quoteNumber}
                 onChange={handleInputChange}
+                onBlur={(e) => validateField('quoteNumber', e.target.value)}
                 placeholder="לדוגמא, 1182"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  validationErrors.quoteNumber ? 'border-red-500' : 'border-gray-300'
+                }`}
                 disabled={isLoading}
                 required
               />
+              {validationErrors.quoteNumber && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.quoteNumber}</p>
+              )}
             </div>
 
             {/* Quote Amount */}
@@ -252,11 +347,17 @@ export default function Dashboard() {
                 name="quoteAmount"
                 value={formData.quoteAmount}
                 onChange={handleInputChange}
-                placeholder="לדוגמא, 62,081"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onBlur={(e) => validateField('quoteAmount', e.target.value)}
+                placeholder="לדוגמא, 62081 או 62,081"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  validationErrors.quoteAmount ? 'border-red-500' : 'border-gray-300'
+                }`}
                 disabled={isLoading}
                 required
               />
+              {validationErrors.quoteAmount && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.quoteAmount}</p>
+              )}
             </div>
 
             {/* Notes */}
