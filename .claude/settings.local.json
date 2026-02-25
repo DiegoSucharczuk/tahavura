@@ -13,7 +13,10 @@
       "Bash(openssl rand:*)",
       "Bash(vercel logs:*)",
       "Bash(git add:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(vercel:*)"
     ]
   }
 }
