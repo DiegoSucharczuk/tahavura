@@ -23,12 +23,19 @@ export default function Dashboard() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
 
   useEffect(() => {
     // בדוק אם זה מכשיר נייד
     const userAgent = navigator.userAgent.toLowerCase();
     const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|windows phone/.test(userAgent);
     setIsMobile(isMobileDevice);
+
+    // Get user role from localStorage
+    const role = localStorage.getItem('userRole') as 'admin' | 'worker' | null;
+    if (role) {
+      setUserRole(role);
+    }
   }, []);
 
   const handleInputChange = (
@@ -59,10 +66,20 @@ export default function Dashboard() {
     reader.readAsDataURL(file);
   }, []);
 
-  const handleLogout = () => {
-    // הסר את ה-token
-    document.cookie = '__session=; Max-Age=0; path=/;';
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear HttpOnly cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear user role from localStorage
+      localStorage.removeItem('userRole');
+      router.push('/login');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +141,7 @@ export default function Dashboard() {
               <List size={20} />
               צפה בכל ההצעות
             </Link>
-            {!isMobile && (
+            {!isMobile && userRole === 'admin' && (
               <Link
                 href="/internal-dashboard/users"
                 className="inline-flex items-center gap-2 py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"

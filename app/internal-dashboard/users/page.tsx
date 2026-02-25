@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isMobile, setIsMobile] = useState<boolean | null>(null); // null means undetermined
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null means undetermined
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -30,9 +31,19 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleLogout = () => {
-    document.cookie = '__session=; Max-Age=0; path=/;';
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear HttpOnly cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('userRole');
+      router.push('/login');
+    }
   };
 
   const loadUsers = async () => {
@@ -101,6 +112,19 @@ export default function UsersPage() {
       }
 
       setIsMobile(false);
+
+      // Check if user is admin
+      const role = localStorage.getItem('userRole');
+      console.log('User Role:', role);
+
+      if (role !== 'admin') {
+        console.log('🚫 Non-admin user detected - redirecting...');
+        setIsAdmin(false);
+        router.replace('/internal-dashboard');
+        return;
+      }
+
+      setIsAdmin(true);
     }
 
     loadUsers();
@@ -112,7 +136,7 @@ export default function UsersPage() {
   }, []);
 
   // אם טרם בדקנו - הצג טוען
-  if (isMobile === null) {
+  if (isMobile === null || isAdmin === null) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
@@ -123,14 +147,20 @@ export default function UsersPage() {
     );
   }
 
-  // תצוגה אם זה נייד
-  if (isMobile) {
+  // תצוגה אם זה נייד או לא אדמין
+  if (isMobile || !isAdmin) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="mb-6 text-5xl">📱</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">זה לא זמין על טלפון</h1>
-          <p className="text-gray-600 mb-6">ניהול משתמשים זמין רק מהמחשב</p>
+          <div className="mb-6 text-5xl">{isMobile ? '📱' : '🔒'}</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            {isMobile ? 'זה לא זמין על טלפון' : 'אין לך הרשאה'}
+          </h1>
+          <p className="text-gray-600 mb-6">
+            {isMobile
+              ? 'ניהול משתמשים זמין רק מהמחשב'
+              : 'ניהול משתמשים זמין רק למנהלים'}
+          </p>
           <button
             onClick={() => router.replace('/internal-dashboard')}
             className="py-2 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"

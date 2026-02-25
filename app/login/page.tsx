@@ -23,6 +23,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important for cookies
         body: JSON.stringify({ email, password }),
       });
 
@@ -34,8 +35,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Set JWT token as cookie
-      document.cookie = `__session=${data.token}; path=/; max-age=86400; secure; samesite=strict`;
+      // Cookie is now set server-side as HttpOnly (more secure)
+      // Store user role in localStorage for client-side access
+      localStorage.setItem('userRole', data.user.role);
 
       // Redirect to dashboard
       router.push('/internal-dashboard');

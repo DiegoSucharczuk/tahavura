@@ -15,14 +15,30 @@ export default function QuotesListPage() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all');
+  const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
 
-  const handleLogout = () => {
-    document.cookie = '__session=; Max-Age=0; path=/;';
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear HttpOnly cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('userRole');
+      router.push('/login');
+    }
   };
 
   useEffect(() => {
     loadQuotes();
+    // Get user role from localStorage
+    const role = localStorage.getItem('userRole') as 'admin' | 'worker' | null;
+    if (role) {
+      setUserRole(role);
+    }
   }, []);
 
   const loadQuotes = async () => {
@@ -115,13 +131,15 @@ export default function QuotesListPage() {
             >
               + הצעה חדשה
             </Link>
-            <Link
-              href="/internal-dashboard/users"
-              className="py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
-            >
-              <Users size={18} />
-              משתמשים
-            </Link>
+            {userRole === 'admin' && (
+              <Link
+                href="/internal-dashboard/users"
+                className="py-2 px-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2"
+              >
+                <Users size={18} />
+                משתמשים
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"

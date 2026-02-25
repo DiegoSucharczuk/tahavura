@@ -73,10 +73,9 @@ export async function POST(request: NextRequest) {
     // Generate JWT token
     const token = signToken(user.id, user.email, user.role);
 
-    // Return token (client will set as cookie)
-    return NextResponse.json({
+    // Create response
+    const response = NextResponse.json({
       success: true,
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -84,6 +83,17 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
     });
+
+    // Set HttpOnly cookie (much more secure - cannot be accessed by JavaScript)
+    response.cookies.set('__session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
