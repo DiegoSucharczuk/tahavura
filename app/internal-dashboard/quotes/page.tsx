@@ -93,7 +93,12 @@ export default function QuotesListPage() {
 
   const handleShareWhatsApp = (quote: Quote) => {
     const approvalUrl = `${window.location.origin}/v/${quote.id}`;
-    const message = `שלום ${quote.customerName}, הנה ההצעה שלך עבור הרכב ${quote.carPlate}: ${approvalUrl}`;
+    const message = `שלום ${quote.customerName},
+הצעת המחיר שלך עבור רכב ${quote.carPlate} מוכנה.
+לצפייה בפרטים ולחתימה דיגיטלית, אנא לחץ על הקישור
+${approvalUrl}
+
+בברכה`;
     const cleanPhone = quote.phoneNumber.replace(/\D/g, '');
 
     // Detect if desktop (not mobile)

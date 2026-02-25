@@ -48,7 +48,12 @@ export default function SummaryPage() {
 
   const handleShareWhatsApp = () => {
     if (!quote) return;
-    const message = `שלום ${quote.customerName}, הנה ההצעה שלך עבור הרכב ${quote.carPlate}: ${approvalUrl}`;
+    const message = `שלום ${quote.customerName},
+הצעת המחיר שלך עבור רכב ${quote.carPlate} מוכנה.
+לצפייה בפרטים ולחתימה דיגיטלית, אנא לחץ על הקישור
+${approvalUrl}
+
+בברכה`;
     const cleanPhone = quote.phoneNumber.replace(/\D/g, '');
 
     // Detect if desktop (not mobile)
