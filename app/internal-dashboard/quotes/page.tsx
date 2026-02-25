@@ -89,15 +89,21 @@ export default function QuotesListPage() {
     const message = `שלום ${quote.customerName}, הנה ההצעה שלך עבור הרכב ${quote.carPlate}: ${approvalUrl}`;
     const cleanPhone = quote.phoneNumber.replace(/\D/g, '');
 
-    // Copy message to clipboard
-    navigator.clipboard.writeText(message).then(() => {
-      // Open WhatsApp chat (without pre-filled message)
-      const whatsappUrl = `https://wa.me/${cleanPhone}`;
-      window.open(whatsappUrl, '_blank');
+    // Detect if desktop (not mobile)
+    const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-      // Show notification
-      alert('ההודעה הועתקה! הדבק אותה בוואטסאפ');
-    });
+    if (isDesktop) {
+      // Desktop: Use desktop app protocol
+      const desktopUrl = `whatsapp://send/?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+      window.location.href = desktopUrl;
+    } else {
+      // Mobile: Copy to clipboard and open chat
+      navigator.clipboard.writeText(message).then(() => {
+        const whatsappUrl = `https://wa.me/${cleanPhone}`;
+        window.open(whatsappUrl, '_blank');
+        alert('ההודעה הועתקה! הדבק אותה בוואטסאפ');
+      });
+    }
   };
 
   const handleCopyLink = (quote: Quote) => {
