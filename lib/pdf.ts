@@ -43,16 +43,6 @@ export async function generateQuotePDF(
           <p style="margin: 3px 0;"><strong>תאריך:</strong> ${quote.createdAt.toLocaleDateString('he-IL')}</p>
     `;
 
-    // Add notes section with dynamic height (no max-height limit)
-    if (quote.notes && quote.notes.trim()) {
-      html += `
-        <div style="margin: 8px 0;">
-          <h3 style="font-size: 12px; font-weight: bold; margin: 4px 0;">הערות:</h3>
-          <div style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 11px; white-space: pre-wrap; word-wrap: break-word;">${quote.notes}</div>
-        </div>
-      `;
-    }
-
     html += `<hr style="border: none; border-top: 1px solid #ddd; margin: 10px 0;">`;
 
     // Images section - side by side if 2 images, single if 1 image
@@ -125,6 +115,16 @@ export async function generateQuotePDF(
       html += `
         <div style="margin: 10px 0; padding: 12px; border: 2px dashed #d1d5db; border-radius: 6px; text-align: center; background: #f9fafb;">
           <p style="font-size: 11px; color: #6b7280; margin: 0;">ממתין לחתימת הלקוח</p>
+        </div>
+      `;
+    }
+
+    // Add notes section AFTER images
+    if (quote.notes && quote.notes.trim()) {
+      html += `
+        <div style="margin: 12px 0; padding: 10px; background: #f3f4f6; border-radius: 6px; border: 1px solid #d1d5db;">
+          <h3 style="font-size: 12px; font-weight: bold; margin: 0 0 6px 0; color: #374151;">הערות:</h3>
+          <p style="font-size: 11px; margin: 0; white-space: pre-wrap; word-wrap: break-word; color: #1f2937;">${quote.notes}</p>
         </div>
       `;
     }

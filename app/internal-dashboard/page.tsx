@@ -528,8 +528,8 @@ export default function Dashboard() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full my-8 p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">בדיקת פרטי ההצעה</h2>
             <p className="text-gray-600 mb-6 text-center">אנא בדוק שכל הפרטים נכונים לפני השליחה</p>
 
