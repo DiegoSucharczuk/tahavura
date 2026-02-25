@@ -149,7 +149,7 @@ export default function Dashboard() {
         setTimeout(() => setShowSuccess(false), 2000);
       } catch (error) {
         console.error('❌ Error compressing image 2:', error);
-        alert('שגיאה בדחיסת התמונה 2');
+        alert('שגיאה בדחיסת ההצעה 2');
       }
     };
     reader.onerror = () => {
@@ -580,7 +580,7 @@ export default function Dashboard() {
                 <div className={`grid gap-3 ${imagePreview2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                   {imagePreview && (
                     <div>
-                      <p className="text-xs font-medium text-gray-700 mb-2 text-center">תמונה 1</p>
+                      <p className="text-xs font-medium text-gray-700 mb-2 text-center">הצעה 1</p>
                       <img
                         src={imagePreview}
                         alt="Quote preview 1"
@@ -590,7 +590,7 @@ export default function Dashboard() {
                   )}
                   {imagePreview2 && (
                     <div>
-                      <p className="text-xs font-medium text-gray-700 mb-2 text-center">תמונה 2</p>
+                      <p className="text-xs font-medium text-gray-700 mb-2 text-center">הצעה 2</p>
                       <img
                         src={imagePreview2}
                         alt="Quote preview 2"

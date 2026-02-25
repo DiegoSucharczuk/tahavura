@@ -64,7 +64,7 @@ export async function generateQuotePDF(
       html += `
         <div style="display: flex; gap: 10px; margin: 10px 0; justify-content: space-between;">
           <div style="flex: 1; text-align: center; position: relative;">
-            <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">תמונה 1</p>
+            <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">הצעה 1</p>
             <div style="position: relative; display: inline-block; width: 100%;">
               <img src="${quote.quoteImageUrl}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; display: block;" />
       `;
@@ -83,7 +83,7 @@ export async function generateQuotePDF(
             </div>
           </div>
           <div style="flex: 1; text-align: center;">
-            <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">תמונה 2</p>
+            <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">הצעה 2</p>
             <img src="${quote.quoteImageUrl2}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;" />
           </div>
         </div>

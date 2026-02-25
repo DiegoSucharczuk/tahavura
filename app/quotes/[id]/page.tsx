@@ -129,7 +129,7 @@ export default function QuoteDetailPage() {
                 <div className={`grid gap-4 ${quote.quoteImageUrl2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                   <div>
                     {quote.quoteImageUrl2 && (
-                      <p className="text-sm font-medium text-gray-700 mb-2 text-center">תמונה 1</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2 text-center">הצעה 1</p>
                     )}
                     <img
                       src={quote.quoteImageUrl}
@@ -139,7 +139,7 @@ export default function QuoteDetailPage() {
                   </div>
                   {quote.quoteImageUrl2 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2 text-center">תמונה 2</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2 text-center">הצעה 2</p>
                       <img
                         src={quote.quoteImageUrl2}
                         alt="Quote Image 2"
