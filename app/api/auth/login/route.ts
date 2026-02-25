@@ -3,6 +3,7 @@ import { getUserByEmail } from '@/lib/auth-helpers';
 import { verifyPassword } from '@/lib/password';
 import { signToken } from '@/lib/jwt';
 import { adminDb } from '@/lib/firebase-admin-simple';
+import { checkRateLimit, resetRateLimit, getResetTimeRemaining } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'אימייל וסיסמה נדרשים' },
         { status: 400 }
+      );
+    }
+
+    // Rate limiting: 5 attempts per 15 minutes per email
+    const rateLimitCheck = checkRateLimit(email.toLowerCase(), 5, 15 * 60 * 1000);
+
+    if (!rateLimitCheck.allowed) {
+      const remainingSeconds = getResetTimeRemaining(email.toLowerCase());
+      const remainingMinutes = Math.ceil(remainingSeconds / 60);
+
+      return NextResponse.json(
+        {
+          error: `יותר מדי ניסיונות. נסה שוב בעוד ${remainingMinutes} דקות`,
+          retryAfter: remainingSeconds
+        },
+        { status: 429 } // 429 = Too Many Requests
       );
     }
 
@@ -30,11 +47,18 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
+      // Failed login - keep the rate limit counter
       return NextResponse.json(
-        { error: 'אימייל או סיסמה שגויים' },
+        {
+          error: 'אימייל או סיסמה שגויים',
+          attemptsRemaining: rateLimitCheck.remaining
+        },
         { status: 401 }
       );
     }
+
+    // Successful login - reset rate limit counter
+    resetRateLimit(email.toLowerCase());
 
     // Update last login
     try {
