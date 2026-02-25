@@ -18,7 +18,15 @@ export async function getAllQuotes(): Promise<Quote[]> {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch quotes');
+      if (response.status === 401) {
+        // Unauthorized - redirect to login
+        console.error('Session expired - redirecting to login');
+        window.location.href = '/login';
+        return [];
+      }
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to fetch quotes:', errorData);
+      throw new Error(errorData.error || 'Failed to fetch quotes');
     }
 
     const { quotes } = await response.json();
@@ -30,7 +38,7 @@ export async function getAllQuotes(): Promise<Quote[]> {
     }));
   } catch (error) {
     console.error('Error fetching quotes:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -175,7 +183,15 @@ export async function getAllUsers(): Promise<User[]> {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch users');
+      if (response.status === 401 || response.status === 403) {
+        // Unauthorized - redirect to login
+        console.error('Session expired or insufficient permissions - redirecting to login');
+        window.location.href = '/login';
+        return [];
+      }
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to fetch users:', errorData);
+      throw new Error(errorData.error || 'Failed to fetch users');
     }
 
     const { users } = await response.json();
@@ -187,7 +203,7 @@ export async function getAllUsers(): Promise<User[]> {
     }));
   } catch (error) {
     console.error('Error fetching users:', error);
-    return [];
+    throw error;
   }
 }
 

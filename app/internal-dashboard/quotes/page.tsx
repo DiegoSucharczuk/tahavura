@@ -46,8 +46,14 @@ export default function QuotesListPage() {
     try {
       const quotesArray = await getAllQuotes();
       setQuotes(quotesArray.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading quotes:', error);
+      // Check if it's an authentication error
+      if (error.message?.includes('Unauthorized') || error.message?.includes('Invalid session')) {
+        // Session expired - user will be redirected to login by getAllQuotes
+        return;
+      }
+      alert('שגיאה בטעינת הצעות. אנא נסה שוב.');
     } finally {
       setIsLoading(false);
     }
