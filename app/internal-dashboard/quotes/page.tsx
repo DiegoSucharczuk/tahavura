@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users, ArrowLeft } from 'lucide-react';
+import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getAllQuotes, deleteQuote } from '@/lib/firestore';
+import { BackButton } from '@/components/BackButton';
 
 export default function QuotesListPage() {
   const router = useRouter();
@@ -118,13 +119,9 @@ export default function QuotesListPage() {
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <Link
-              href="/internal-dashboard"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium mb-3"
-            >
-              <ArrowLeft size={20} />
-              חזור
-            </Link>
+            <div className="mb-3">
+              <BackButton href="/internal-dashboard" />
+            </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
               כל ההצעות
             </h1>

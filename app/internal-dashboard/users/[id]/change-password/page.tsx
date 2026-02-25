@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
 import { updateUserPassword, getAllUsers } from '@/lib/firestore';
 import { User } from '@/lib/types';
+import { BackButton } from '@/components/BackButton';
 
 export default function ChangePasswordPage() {
   const params = useParams();
@@ -126,13 +126,9 @@ export default function ChangePasswordPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4"
-          >
-            <ArrowRight size={20} />
-            חזור
-          </button>
+          <div className="mb-4">
+            <BackButton href="/internal-dashboard/users" />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">שינוי סיסמה</h1>
           <p className="text-gray-600">שנה את סיסמת {user.name}</p>
         </div>

@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, Check } from 'lucide-react';
+import { Download, Check } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getQuote } from '@/lib/firestore';
+import { BackButton } from '@/components/BackButton';
 
 export default function QuoteDetailPage() {
   const params = useParams();
@@ -85,13 +86,7 @@ export default function QuoteDetailPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <Link
-            href="/quotes"
-            className="inline-flex items-center gap-2 py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            חזור
-          </Link>
+          <BackButton href="/internal-dashboard/quotes" label="חזור להצעות" />
           <div className="flex items-center gap-3">
             {quote.status === 'approved' && (
               <button

@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Edit2, LogOut, Lock, Phone, ArrowLeft, Unlock, Shield } from 'lucide-react';
+import { Plus, Trash2, Edit2, LogOut, Lock, Phone, Unlock, Shield } from 'lucide-react';
 import { User } from '@/lib/types';
 import { getAllUsers, deleteUser, createUser } from '@/lib/firestore';
+import { BackButton } from '@/components/BackButton';
 
 interface LockedUser {
   identifier: string;
@@ -230,35 +231,31 @@ export default function UsersPage() {
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/internal-dashboard')}
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
-            >
-              <ArrowLeft size={20} />
-              חזור
-            </button>
+        <div className="mb-8">
+          <div className="mb-4">
+            <BackButton href="/internal-dashboard" />
+          </div>
+          <div className="flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">ניהול משתמשים</h1>
               <p className="text-gray-600">יצור, ערוך ומחק משתמשים מהמערכת</p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              className="inline-flex items-center gap-2 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-            >
-              <Plus size={20} />
-              משתמש חדש
-            </button>
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700"
-            >
-              <LogOut size={20} />
-              התנתק
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="inline-flex items-center gap-2 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+              >
+                <Plus size={20} />
+                משתמש חדש
+              </button>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700"
+              >
+                <LogOut size={20} />
+                התנתק
+              </button>
+            </div>
           </div>
         </div>
 
