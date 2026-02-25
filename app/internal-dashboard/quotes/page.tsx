@@ -116,12 +116,9 @@ export default function QuotesListPage() {
         window.open(webUrl, '_blank');
       }, 2000);
     } else {
-      // Mobile: Copy to clipboard and open chat
-      navigator.clipboard.writeText(message).then(() => {
-        const whatsappUrl = `https://wa.me/${cleanPhone}`;
-        window.open(whatsappUrl, '_blank');
-        alert('ההודעה הועתקה! הדבק אותה בוואטסאפ');
-      });
+      // Mobile: Use wa.me with pre-filled message
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+      window.location.href = whatsappUrl;
     }
   };
 
