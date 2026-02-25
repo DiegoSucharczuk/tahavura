@@ -69,3 +69,46 @@ export function getResetTimeRemaining(identifier: string): number {
   const remaining = Math.max(0, entry.resetTime - now);
   return Math.ceil(remaining / 1000); // Convert to seconds
 }
+
+/**
+ * Get all currently rate-limited identifiers
+ * Useful for admin dashboard to see who's locked
+ */
+export function getLockedIdentifiers(): Array<{
+  identifier: string;
+  attempts: number;
+  resetTime: number;
+  remainingSeconds: number;
+}> {
+  const now = Date.now();
+  const locked: Array<{
+    identifier: string;
+    attempts: number;
+    resetTime: number;
+    remainingSeconds: number;
+  }> = [];
+
+  for (const [identifier, entry] of attempts.entries()) {
+    if (entry.count >= 5 && now < entry.resetTime) {
+      locked.push({
+        identifier,
+        attempts: entry.count,
+        resetTime: entry.resetTime,
+        remainingSeconds: Math.ceil((entry.resetTime - now) / 1000),
+      });
+    }
+  }
+
+  return locked;
+}
+
+/**
+ * Check if an identifier is currently locked
+ */
+export function isLocked(identifier: string): boolean {
+  const entry = attempts.get(identifier);
+  if (!entry) return false;
+
+  const now = Date.now();
+  return entry.count >= 5 && now < entry.resetTime;
+}
