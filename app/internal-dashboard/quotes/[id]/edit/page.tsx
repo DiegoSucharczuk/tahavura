@@ -391,6 +391,11 @@ export default function EditQuotePage() {
                 name="notes"
                 value={formData.notes}
                 onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.stopPropagation();
+                  }
+                }}
                 rows={3}
                 maxLength={150}
                 placeholder="מקסימום 3 שורות..."

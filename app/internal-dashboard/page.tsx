@@ -432,6 +432,11 @@ export default function Dashboard() {
                 name="notes"
                 value={formData.notes}
                 onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.stopPropagation();
+                  }
+                }}
                 placeholder="הוסף פרטים נוספים (מקסימום 3 שורות)..."
                 rows={3}
                 maxLength={150}
