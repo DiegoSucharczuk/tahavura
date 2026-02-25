@@ -384,17 +384,20 @@ export default function EditQuotePage() {
             {/* Notes */}
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                הערות
+                הערות (עד 3 שורות)
               </label>
               <textarea
                 id="notes"
                 name="notes"
                 value={formData.notes}
                 onChange={handleInputChange}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                maxLength={150}
+                placeholder="מקסימום 3 שורות..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 disabled={isSaving}
               />
+              <p className="mt-1 text-xs text-gray-500">{formData.notes.length}/150 תווים</p>
             </div>
 
             {/* Image 1 */}

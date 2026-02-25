@@ -43,12 +43,12 @@ export async function generateQuotePDF(
           <p style="margin: 3px 0;"><strong>תאריך:</strong> ${quote.createdAt.toLocaleDateString('he-IL')}</p>
     `;
 
-    // Add notes section BEFORE images
+    // Add notes section BEFORE images (max 3 lines)
     if (quote.notes && quote.notes.trim()) {
       html += `
         <div style="margin: 8px 0;">
-          <h3 style="font-size: 12px; font-weight: bold; margin: 4px 0;">הערות:</h3>
-          <div style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 60px; overflow: hidden;">${quote.notes}</div>
+          <h3 style="font-size: 11px; font-weight: bold; margin: 3px 0;">הערות:</h3>
+          <div style="background: #f3f4f6; padding: 6px 8px; border-radius: 4px; font-size: 10px; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; max-height: 42px; overflow: hidden;">${quote.notes}</div>
         </div>
       `;
     }
