@@ -48,22 +48,18 @@ export default function SummaryPage() {
 
   const handleShareWhatsApp = () => {
     if (!quote) return;
-    const message = encodeURIComponent(
-      `שלום ${quote.customerName}, הנה ההצעה שלך עבור הרכב ${quote.carPlate}: ${approvalUrl}`
-    );
+    const message = `שלום ${quote.customerName}, הנה ההצעה שלך עבור הרכב ${quote.carPlate}: ${approvalUrl}`;
     const cleanPhone = quote.phoneNumber.replace(/\D/g, '');
 
-    // Use whatsapp:// protocol to open app directly
-    const whatsappUrl = `whatsapp://send?phone=${cleanPhone}&text=${message}`;
+    // Copy message to clipboard
+    navigator.clipboard.writeText(message).then(() => {
+      // Open WhatsApp chat (without pre-filled message)
+      const whatsappUrl = `https://wa.me/${cleanPhone}`;
+      window.open(whatsappUrl, '_blank');
 
-    // Fallback to wa.me if app not installed
-    window.location.href = whatsappUrl;
-
-    // Fallback after 1 second if app doesn't open
-    setTimeout(() => {
-      const webUrl = `https://wa.me/${cleanPhone}?text=${message}`;
-      window.open(webUrl, '_blank');
-    }, 1000);
+      // Show notification
+      alert('ההודעה הועתקה! הדבק אותה בוואטסאפ');
+    });
   };
 
   const handleGeneratePDF = async () => {
