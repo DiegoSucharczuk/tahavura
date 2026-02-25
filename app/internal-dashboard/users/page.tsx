@@ -2,13 +2,21 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Edit2, LogOut, Lock, Phone, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Edit2, LogOut, Lock, Phone, ArrowLeft, Unlock, Shield } from 'lucide-react';
 import { User } from '@/lib/types';
 import { getAllUsers, deleteUser, createUser } from '@/lib/firestore';
+
+interface LockedUser {
+  identifier: string;
+  attempts: number;
+  resetTime: number;
+  remainingSeconds: number;
+}
 
 export default function UsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  const [lockedUsers, setLockedUsers] = useState<LockedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -40,15 +48,50 @@ export default function UsersPage() {
     }
   };
 
+  const loadLockedUsers = async () => {
+    try {
+      const response = await fetch('/api/auth/locked-users', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLockedUsers(data.lockedUsers || []);
+      }
+    } catch (error) {
+      console.error('Error loading locked users:', error);
+    }
+  };
+
+  const handleUnlockUser = async (email: string) => {
+    try {
+      const response = await fetch('/api/auth/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        setSuccess(`משתמש ${email} שוחרר בהצלחה`);
+        loadLockedUsers(); // Refresh locked users list
+      } else {
+        setError('שגיאה בשחרור משתמש');
+      }
+    } catch (error) {
+      console.error('Error unlocking user:', error);
+      setError('שגיאה בשחרור משתמש');
+    }
+  };
+
   useEffect(() => {
     // בדוק אם זה מכשיר נייד - זה חייב להיות מוקדם ביותר
     if (typeof window !== 'undefined') {
       const userAgent = navigator.userAgent.toLowerCase();
       const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|windows phone/.test(userAgent);
-      
+
       console.log('User-Agent:', navigator.userAgent);
       console.log('Is Mobile:', isMobileDevice);
-      
+
       if (isMobileDevice) {
         console.log('🚫 Mobile user detected - redirecting...');
         setIsMobile(true);
@@ -56,11 +99,16 @@ export default function UsersPage() {
         router.replace('/internal-dashboard');
         return;
       }
-      
+
       setIsMobile(false);
     }
-    
+
     loadUsers();
+    loadLockedUsers();
+
+    // Refresh locked users every 30 seconds
+    const interval = setInterval(loadLockedUsers, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // אם טרם בדקנו - הצג טוען
@@ -193,6 +241,50 @@ export default function UsersPage() {
         {success && (
           <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">
             {success}
+          </div>
+        )}
+
+        {/* Locked Users Section */}
+        {lockedUsers.length > 0 && (
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="text-red-600" size={24} />
+              <h2 className="text-xl font-bold text-red-900">
+                משתמשים נעולים ({lockedUsers.length})
+              </h2>
+            </div>
+            <p className="text-red-700 mb-4 text-sm">
+              המשתמשים הבאים נעולים בגלל יותר מדי ניסיונות התחברות כושלים
+            </p>
+            <div className="space-y-3">
+              {lockedUsers.map((locked) => {
+                const minutes = Math.floor(locked.remainingSeconds / 60);
+                const seconds = locked.remainingSeconds % 60;
+                return (
+                  <div
+                    key={locked.identifier}
+                    className="bg-white border border-red-200 rounded-lg p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Lock className="text-red-500" size={20} />
+                      <div>
+                        <p className="font-medium text-gray-900">{locked.identifier}</p>
+                        <p className="text-sm text-gray-600">
+                          {locked.attempts} ניסיונות • נעול עוד {minutes}:{seconds.toString().padStart(2, '0')} דקות
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUnlockUser(locked.identifier)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <Unlock size={16} />
+                      שחרר
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
