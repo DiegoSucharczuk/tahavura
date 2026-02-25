@@ -259,6 +259,14 @@ export default function ApprovalPage() {
                 <p className="text-lg font-medium">{quote.carPlate}</p>
               </div>
               <div>
+                <p className="text-sm text-gray-600">מספר הצעה</p>
+                <p className="text-lg font-medium text-blue-600">{quote.quoteNumber}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">סכום הצעה (כולל מע״מ)</p>
+                <p className="text-lg font-medium text-green-600">₪ {quote.quoteAmount}</p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-600">מספר טלפון</p>
                 <p className="text-lg font-medium">{quote.phoneNumber}</p>
               </div>
@@ -283,6 +291,14 @@ export default function ApprovalPage() {
               </div>
             )}
           </div>
+
+          {/* Notes Section (moved here, between image and signature) */}
+          {quote.notes && (
+            <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 mb-6">
+              <h2 className="text-lg font-bold mb-4">הערות</h2>
+              <p className="text-gray-700 break-words whitespace-pre-wrap">{quote.notes}</p>
+            </div>
+          )}
 
           {/* Signature Section */}
           {!isApproved ? (

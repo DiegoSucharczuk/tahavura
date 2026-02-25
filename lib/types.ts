@@ -5,6 +5,8 @@ export interface Quote {
   carPlate: string;
   phoneNumber: string;
   quoteImageUrl: string;
+  quoteNumber: string;
+  quoteAmount: string;
   notes: string;
   status: 'pending' | 'approved';
   signatureImageUrl: string | null;

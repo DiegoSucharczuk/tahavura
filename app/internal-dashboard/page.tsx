@@ -15,6 +15,8 @@ export default function Dashboard() {
     customerName: '',
     carPlate: '',
     phoneNumber: '',
+    quoteNumber: '',
+    quoteAmount: '',
     notes: '',
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -66,7 +68,7 @@ export default function Dashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.customerName || !formData.carPlate || !formData.phoneNumber) {
+    if (!formData.customerName || !formData.carPlate || !formData.phoneNumber || !formData.quoteNumber || !formData.quoteAmount) {
       alert('אנא מלא את כל השדות הנדרשים');
       return;
     }
@@ -198,6 +200,42 @@ export default function Dashboard() {
                 value={formData.phoneNumber}
                 onChange={handleInputChange}
                 placeholder="+972501234567"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            {/* Quote Number */}
+            <div>
+              <label htmlFor="quoteNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                מספר הצעה <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="quoteNumber"
+                name="quoteNumber"
+                value={formData.quoteNumber}
+                onChange={handleInputChange}
+                placeholder="לדוגמא, 1182"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            {/* Quote Amount */}
+            <div>
+              <label htmlFor="quoteAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                סכום הצעה (כולל מע״מ) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="quoteAmount"
+                name="quoteAmount"
+                value={formData.quoteAmount}
+                onChange={handleInputChange}
+                placeholder="לדוגמא, 62,081"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={isLoading}
                 required

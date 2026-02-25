@@ -194,6 +194,14 @@ export default function SummaryPage() {
               <p className="text-lg font-medium text-gray-900">{quote.carPlate}</p>
             </div>
             <div>
+              <p className="text-sm text-gray-600">מספר הצעה</p>
+              <p className="text-lg font-medium text-blue-600">{quote.quoteNumber}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">סכום הצעה (כולל מע״מ)</p>
+              <p className="text-lg font-medium text-green-600">₪ {quote.quoteAmount}</p>
+            </div>
+            <div>
               <p className="text-sm text-gray-600">מספר טלפון</p>
               <p className="text-lg font-medium text-gray-900">{quote.phoneNumber}</p>
             </div>

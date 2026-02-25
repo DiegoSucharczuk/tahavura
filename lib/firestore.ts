@@ -28,6 +28,8 @@ export async function getAllQuotes(): Promise<Quote[]> {
         customerName: data.customerName,
         carPlate: data.carPlate,
         phoneNumber: data.phoneNumber,
+        quoteNumber: data.quoteNumber || '',
+        quoteAmount: data.quoteAmount || '',
         quoteImageUrl: data.quoteImageUrl,
         notes: data.notes,
         status: data.status,
@@ -46,6 +48,8 @@ export async function getAllQuotes(): Promise<Quote[]> {
         customerName: q.customerName,
         carPlate: q.carPlate,
         phoneNumber: q.phoneNumber,
+        quoteNumber: q.quoteNumber,
+        quoteAmount: q.quoteAmount,
         quoteImageUrl: q.quoteImageUrl,
         notes: q.notes,
         status: q.status,
@@ -83,11 +87,14 @@ export async function getQuote(quoteId: string): Promise<Quote | null> {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
+      console.log('🔍 Firestore data loaded:', { quoteNumber: data.quoteNumber, quoteAmount: data.quoteAmount });
       const quote = {
         id: docSnap.id,
         customerName: data.customerName,
         carPlate: data.carPlate,
         phoneNumber: data.phoneNumber,
+        quoteNumber: data.quoteNumber || '',
+        quoteAmount: data.quoteAmount || '',
         quoteImageUrl: data.quoteImageUrl,
         notes: data.notes,
         status: data.status,
@@ -104,6 +111,8 @@ export async function getQuote(quoteId: string): Promise<Quote | null> {
         customerName: quote.customerName,
         carPlate: quote.carPlate,
         phoneNumber: quote.phoneNumber,
+        quoteNumber: quote.quoteNumber,
+        quoteAmount: quote.quoteAmount,
         quoteImageUrl: quote.quoteImageUrl,
         notes: quote.notes,
         status: quote.status,
@@ -143,6 +152,8 @@ export async function createQuote(data: QuoteFormData): Promise<string> {
     customerName: data.customerName,
     carPlate: data.carPlate,
     phoneNumber: data.phoneNumber,
+    quoteNumber: data.quoteNumber || '',
+    quoteAmount: data.quoteAmount || '',
     quoteImageUrl: data.quoteImageUrl,
     notes: data.notes,
     idNumber: data.idNumber || '',

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, Check, LogOut } from 'lucide-react';
+import { ArrowLeft, Download, Check } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getQuote } from '@/lib/firestore';
@@ -52,11 +52,6 @@ export default function QuoteDetailPage() {
     }
   };
 
-  const handleLogout = () => {
-    document.cookie = '__session=; Max-Age=0; path=/;';
-    router.push('/login');
-  };
-
   if (isLoading) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -92,7 +87,7 @@ export default function QuoteDetailPage() {
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/quotes"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium"
+            className="inline-flex items-center gap-2 py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             <ArrowLeft size={20} />
             חזור
@@ -108,13 +103,6 @@ export default function QuoteDetailPage() {
                 {isGeneratingPDF ? 'מייצר...' : 'הורד PDF'}
               </button>
             )}
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-            >
-              <LogOut size={20} />
-              התנתקות
-            </button>
           </div>
         </div>
 
@@ -149,6 +137,14 @@ export default function QuoteDetailPage() {
               </div>
             )}
 
+            {/* Notes Section (between image and signature) */}
+            {quote.notes && (
+              <div className="bg-white rounded-lg shadow-lg p-4">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">הערות</h2>
+                <p className="text-gray-700 break-words whitespace-pre-wrap">{quote.notes}</p>
+              </div>
+            )}
+
             {/* Signature */}
             {quote.status === 'approved' && quote.signatureImageUrl && (
               <div className="bg-white rounded-lg shadow-lg p-4">
@@ -176,12 +172,32 @@ export default function QuoteDetailPage() {
                 )}
               </div>
             )}
+
+            {/* Notes Section (between image and signature) */}
+            {quote.notes && (
+              <div className="bg-white rounded-lg shadow-lg p-4">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">הערות</h2>
+                <p className="text-gray-700 break-words whitespace-pre-wrap">{quote.notes}</p>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Details */}
           <div className="bg-white rounded-lg shadow-lg p-6 h-fit">
             <h2 className="text-lg font-bold text-gray-900 mb-4">פרטי ההצעה</h2>
             <div className="space-y-4">
+              {/* Quote Number and Amount - Highlighted */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-2 border-blue-200">
+                <div className="mb-3">
+                  <p className="text-xs text-gray-600 uppercase">מספר הצעה</p>
+                  <p className="text-2xl font-bold text-blue-600">{quote.quoteNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 uppercase">סכום הצעה (כולל מע״מ)</p>
+                  <p className="text-2xl font-bold text-green-600">₪ {quote.quoteAmount}</p>
+                </div>
+              </div>
+
               <div>
                 <p className="text-sm text-gray-600">שם הלקוח</p>
                 <p className="text-base font-medium text-gray-900">{quote.customerName}</p>
@@ -224,12 +240,6 @@ export default function QuoteDetailPage() {
                       day: 'numeric',
                     })}
                   </p>
-                </div>
-              )}
-              {quote.notes && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-600 mb-2">הערות</p>
-                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{quote.notes}</p>
                 </div>
               )}
             </div>
