@@ -93,9 +93,21 @@ export default function QuotesListPage() {
     const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isDesktop) {
-      // Desktop: Use desktop app protocol
+      // Desktop: Try app first, then fallback to web
       const desktopUrl = `whatsapp://send/?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-      window.location.href = desktopUrl;
+      const webUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+
+      // Create hidden iframe to test if app opens
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = desktopUrl;
+      document.body.appendChild(iframe);
+
+      // If app doesn't open in 2 seconds, use web
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        window.open(webUrl, '_blank');
+      }, 2000);
     } else {
       // Mobile: Copy to clipboard and open chat
       navigator.clipboard.writeText(message).then(() => {
