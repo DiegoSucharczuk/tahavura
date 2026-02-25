@@ -43,20 +43,33 @@ export async function generateQuotePDF(
           <p style="margin: 3px 0;"><strong>תאריך:</strong> ${quote.createdAt.toLocaleDateString('he-IL')}</p>
     `;
 
+    // Add notes section BEFORE images
+    if (quote.notes && quote.notes.trim()) {
+      html += `
+        <div style="margin: 8px 0;">
+          <h3 style="font-size: 12px; font-weight: bold; margin: 4px 0;">הערות:</h3>
+          <div style="background: #f3f4f6; padding: 8px; border-radius: 4px; font-size: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 60px; overflow: hidden;">${quote.notes}</div>
+        </div>
+      `;
+    }
+
     html += `<hr style="border: none; border-top: 1px solid #ddd; margin: 10px 0;">`;
 
     // Images section - side by side if 2 images, single if 1 image
     const hasImage2 = quote.quoteImageUrl2 && quote.quoteImageUrl2.length > 0;
     const isApproved = quote.status === 'approved' && quote.signatureImageUrl;
 
+    console.log('📄 PDF Generation:', { hasImage2, quoteImageUrl2Length: quote.quoteImageUrl2?.length });
+
     if (hasImage2) {
-      // Two images side by side
+      // Two images side by side using table layout (better for PDF)
       html += `
-        <div style="display: flex; gap: 10px; margin: 10px 0; justify-content: space-between;">
-          <div style="flex: 1; text-align: center; position: relative;">
-            <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">הצעה 1</p>
-            <div style="position: relative; display: inline-block; width: 100%;">
-              <img src="${quote.quoteImageUrl}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; display: block;" />
+        <table style="width: 100%; margin: 10px 0; border-collapse: collapse;">
+          <tr>
+            <td style="width: 50%; text-align: center; padding: 5px; vertical-align: top;">
+              <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">הצעה 1</p>
+              <div style="position: relative; display: inline-block; width: 100%;">
+                <img src="${quote.quoteImageUrl}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; display: block;" />
       `;
 
       // Add signature overlay on Image 1 (bottom left)
@@ -70,13 +83,14 @@ export async function generateQuotePDF(
       }
 
       html += `
-            </div>
-          </div>
-          <div style="flex: 1; text-align: center;">
-            <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">הצעה 2</p>
-            <img src="${quote.quoteImageUrl2}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;" />
-          </div>
-        </div>
+              </div>
+            </td>
+            <td style="width: 50%; text-align: center; padding: 5px; vertical-align: top;">
+              <p style="font-size: 10px; font-weight: bold; margin: 0 0 5px 0;">הצעה 2</p>
+              <img src="${quote.quoteImageUrl2}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; display: block;" />
+            </td>
+          </tr>
+        </table>
       `;
     } else {
       // Single image - larger with signature overlay
@@ -115,16 +129,6 @@ export async function generateQuotePDF(
       html += `
         <div style="margin: 10px 0; padding: 12px; border: 2px dashed #d1d5db; border-radius: 6px; text-align: center; background: #f9fafb;">
           <p style="font-size: 11px; color: #6b7280; margin: 0;">ממתין לחתימת הלקוח</p>
-        </div>
-      `;
-    }
-
-    // Add notes section AFTER images
-    if (quote.notes && quote.notes.trim()) {
-      html += `
-        <div style="margin: 12px 0; padding: 10px; background: #f3f4f6; border-radius: 6px; border: 1px solid #d1d5db;">
-          <h3 style="font-size: 12px; font-weight: bold; margin: 0 0 6px 0; color: #374151;">הערות:</h3>
-          <p style="font-size: 11px; margin: 0; white-space: pre-wrap; word-wrap: break-word; color: #1f2937;">${quote.notes}</p>
         </div>
       `;
     }
