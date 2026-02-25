@@ -21,7 +21,7 @@ export async function POST(
       );
     }
 
-    // Update quote with signature
+    // Update quote with signature (compressed base64 from client)
     const updateData: any = {
       status: 'approved',
       signatureImageUrl,

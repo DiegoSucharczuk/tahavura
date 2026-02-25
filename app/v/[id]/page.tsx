@@ -226,21 +226,47 @@ export default function ApprovalPage() {
             {isApproved ? 'ההצעה אושרה' : 'בהמתנה לאישור'}
           </div>
 
-          {/* Quote Image Section */}
+          {/* Quote Images Section */}
           {quote.quoteImageUrl && (
             <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 mb-6">
-              <h2 className="text-xl font-bold mb-4">תמונת ההצעה</h2>
-              <div
-                className="flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden"
-                onWheel={handlePinch}
-              >
-                <div style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.2s' }}>
-                  <img
-                    src={quote.quoteImageUrl}
-                    alt="Quote"
-                    className="max-w-full h-auto"
-                  />
+              <h2 className="text-xl font-bold mb-4">
+                {quote.quoteImageUrl2 ? 'תמונות ההצעה' : 'תמונת ההצעה'}
+              </h2>
+              <div className={`grid gap-4 ${quote.quoteImageUrl2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                <div>
+                  {quote.quoteImageUrl2 && (
+                    <p className="text-sm font-medium text-gray-700 mb-2 text-center">תמונה 1</p>
+                  )}
+                  <div
+                    className="flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden"
+                    onWheel={handlePinch}
+                  >
+                    <div style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.2s' }}>
+                      <img
+                        src={quote.quoteImageUrl}
+                        alt="Quote Image 1"
+                        className="max-w-full h-auto"
+                      />
+                    </div>
+                  </div>
                 </div>
+                {quote.quoteImageUrl2 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2 text-center">תמונה 2</p>
+                    <div
+                      className="flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden"
+                      onWheel={handlePinch}
+                    >
+                      <div style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.2s' }}>
+                        <img
+                          src={quote.quoteImageUrl2}
+                          alt="Quote Image 2"
+                          className="max-w-full h-auto"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <p className="text-sm text-gray-500 mt-4 text-center">Ctrl+Scroll לשינוי גודל</p>
             </div>

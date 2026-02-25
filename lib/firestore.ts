@@ -81,7 +81,10 @@ export async function createQuote(data: QuoteFormData): Promise<string> {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create quote');
+      // Try to get error message from response
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('Server error:', errorData);
+      throw new Error(errorData.error || 'Failed to create quote');
     }
 
     const { quoteId } = await response.json();

@@ -5,6 +5,7 @@ export interface Quote {
   carPlate: string;
   phoneNumber: string;
   quoteImageUrl: string;
+  quoteImageUrl2?: string; // Optional second image
   quoteNumber: string;
   quoteAmount: string;
   notes: string;

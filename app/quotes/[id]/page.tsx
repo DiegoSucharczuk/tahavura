@@ -120,15 +120,34 @@ export default function QuoteDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Images */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Quote Image */}
+            {/* Quote Images */}
             {quote.quoteImageUrl && (
               <div className="bg-white rounded-lg shadow-lg p-4">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">תמונת ההצעה</h2>
-                <img
-                  src={quote.quoteImageUrl}
-                  alt="Quote"
-                  className="w-full h-auto rounded-lg border border-gray-200"
-                />
+                <h2 className="text-lg font-bold text-gray-900 mb-4">
+                  {quote.quoteImageUrl2 ? 'תמונות ההצעה' : 'תמונת ההצעה'}
+                </h2>
+                <div className={`grid gap-4 ${quote.quoteImageUrl2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                  <div>
+                    {quote.quoteImageUrl2 && (
+                      <p className="text-sm font-medium text-gray-700 mb-2 text-center">תמונה 1</p>
+                    )}
+                    <img
+                      src={quote.quoteImageUrl}
+                      alt="Quote Image 1"
+                      className="w-full h-auto rounded-lg border border-gray-200"
+                    />
+                  </div>
+                  {quote.quoteImageUrl2 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2 text-center">תמונה 2</p>
+                      <img
+                        src={quote.quoteImageUrl2}
+                        alt="Quote Image 2"
+                        className="w-full h-auto rounded-lg border border-gray-200"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users } from 'lucide-react';
+import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users, Edit } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getAllQuotes, deleteQuote } from '@/lib/firestore';
@@ -313,6 +313,15 @@ export default function QuotesListPage() {
                   >
                     <Eye size={18} />
                   </Link>
+                  {quote.status === 'pending' && (
+                    <Link
+                      href={`/internal-dashboard/quotes/${quote.id}/edit`}
+                      className="text-orange-600 hover:text-orange-800 p-2 rounded hover:bg-orange-50"
+                      title="ערוך הצעה"
+                    >
+                      <Edit size={18} />
+                    </Link>
+                  )}
                   <button
                     onClick={() => handleCopyLink(quote)}
                     className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"

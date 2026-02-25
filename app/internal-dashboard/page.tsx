@@ -13,6 +13,7 @@ import {
   validateName,
   validateQuoteNumber,
 } from '@/lib/validation';
+import { compressBase64Image } from '@/lib/image-compression';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -25,13 +26,18 @@ export default function Dashboard() {
     quoteNumber: '',
     quoteAmount: '',
     notes: '',
+    idNumber: '',
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string>('');
+  const [selectedImage2, setSelectedImage2] = useState<File | null>(null);
+  const [imagePreview2, setImagePreview2] = useState<string | null>(null);
+  const [imageBase64_2, setImageBase64_2] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     // בדוק אם זה מכשיר נייד
@@ -97,20 +103,58 @@ export default function Dashboard() {
     }
   };
 
-  const handleImageCapture = useCallback((file: File) => {
+  const handleImageCapture = useCallback(async (file: File) => {
     setSelectedImage(file);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
-      console.log('✅ Image loaded:', dataUrl.substring(0, 50) + '...');
-      setImagePreview(dataUrl);
-      setImageBase64(dataUrl);  // Store in separate state
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
+      console.log('✅ Image loaded, compressing...');
+
+      try {
+        // Compress image to max 350KB to ensure 2 images fit in 1MB document
+        const compressed = await compressBase64Image(dataUrl, 350);
+        console.log('✅ Image compressed:', compressed.substring(0, 50) + '...');
+
+        setImagePreview(compressed);
+        setImageBase64(compressed);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      } catch (error) {
+        console.error('❌ Error compressing image:', error);
+        alert('שגיאה בדחיסת התמונה');
+      }
     };
     reader.onerror = () => {
       console.error('❌ Error reading file');
       alert('טעות בקריאת התמונה');
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleImageCapture2 = useCallback(async (file: File) => {
+    setSelectedImage2(file);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target?.result as string;
+      console.log('✅ Image 2 loaded, compressing...');
+
+      try {
+        // Compress image to max 350KB
+        const compressed = await compressBase64Image(dataUrl, 350);
+        console.log('✅ Image 2 compressed:', compressed.substring(0, 50) + '...');
+
+        setImagePreview2(compressed);
+        setImageBase64_2(compressed);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      } catch (error) {
+        console.error('❌ Error compressing image 2:', error);
+        alert('שגיאה בדחיסת התמונה 2');
+      }
+    };
+    reader.onerror = () => {
+      console.error('❌ Error reading file 2');
+      alert('טעות בקריאת התמונה השנייה');
     };
     reader.readAsDataURL(file);
   }, []);
@@ -131,7 +175,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleReviewQuote = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate all fields
@@ -160,18 +204,33 @@ export default function Dashboard() {
       return;
     }
 
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    const carPlateValidation = validateCarPlate(formData.carPlate);
+    const phoneValidation = validatePhoneNumber(formData.phoneNumber);
+    const amountValidation = validateQuoteAmount(formData.quoteAmount);
+
     setIsLoading(true);
     try {
       // Use cleaned/validated data
-      const cleanedData = {
+      const cleanedData: any = {
         customerName: formData.customerName.trim(),
         carPlate: carPlateValidation.cleaned,
         phoneNumber: phoneValidation.cleaned,
         quoteNumber: formData.quoteNumber.trim(),
         quoteAmount: amountValidation.cleaned,
         notes: formData.notes.trim(),
+        idNumber: formData.idNumber.trim(),
         quoteImageUrl: imageBase64,
       };
+
+      // Add second image if provided
+      if (imageBase64_2 && imageBase64_2.length > 0) {
+        cleanedData.quoteImageUrl2 = imageBase64_2;
+      }
 
       console.log('📤 Creating quote with validated data');
       console.log('📤 Cleaned car plate:', cleanedData.carPlate);
@@ -181,12 +240,15 @@ export default function Dashboard() {
       const quoteId = await createQuote(cleanedData);
 
       console.log('✅ Quote created:', quoteId);
-      
-      // Redirect to summary page
+
+      // Close modal and redirect to summary page
+      setShowConfirmModal(false);
       router.push(`/summary/${quoteId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error creating quote:', error);
-      alert('הצעה לא נוצרה. אנא נסה שוב.');
+      const errorMessage = error?.message || 'שגיאה לא ידועה';
+      alert(`הצעה לא נוצרה.\nשגיאה: ${errorMessage}\nאנא נסה שוב.`);
+      setShowConfirmModal(false);
     } finally {
       setIsLoading(false);
     }
@@ -238,7 +300,7 @@ export default function Dashboard() {
               ✓ התמונה הועלתה בהצלחה
             </div>
           )}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleReviewQuote} className="space-y-6">
             {/* Customer Name */}
             <div>
               <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -377,10 +439,10 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Camera Input */}
+            {/* Camera Input - Image 1 (Required) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                תמונת ההצעה
+                תמונת הצעה 1 <span className="text-red-500">*</span>
               </label>
               <CameraInput onCapture={handleImageCapture} carPlate={formData.carPlate} />
 
@@ -389,7 +451,7 @@ export default function Dashboard() {
                 <div className="mt-4 relative">
                   <img
                     src={imagePreview}
-                    alt="Quote preview"
+                    alt="Quote preview 1"
                     className="w-full h-auto rounded-lg border-2 border-green-500"
                   />
                   <button
@@ -397,6 +459,7 @@ export default function Dashboard() {
                     onClick={() => {
                       setSelectedImage(null);
                       setImagePreview(null);
+                      setImageBase64('');
                     }}
                     className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
                     disabled={isLoading}
@@ -407,23 +470,44 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Submit Button */}
+            {/* Camera Input - Image 2 (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                תמונת הצעה 2 <span className="text-gray-500 text-xs">(אופציונלי)</span>
+              </label>
+              <CameraInput onCapture={handleImageCapture2} carPlate={formData.carPlate} />
+
+              {/* Image Preview 2 */}
+              {imagePreview2 && (
+                <div className="mt-4 relative">
+                  <img
+                    src={imagePreview2}
+                    alt="Quote preview 2"
+                    className="w-full h-auto rounded-lg border-2 border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedImage2(null);
+                      setImagePreview2(null);
+                      setImageBase64_2('');
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                    disabled={isLoading}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Review Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isLoading ? (
-                <>
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  יוצר הצעה...
-                </>
-              ) : (
-                <>
-                  <Send size={20} />
-                  שלח הצעה
-                </>
-              )}
+              📋 בדוק פרטים לפני שליחה
             </button>
           </form>
         </div>
@@ -441,6 +525,113 @@ export default function Dashboard() {
           </ol>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">בדיקת פרטי ההצעה</h2>
+            <p className="text-gray-600 mb-6 text-center">אנא בדוק שכל הפרטים נכונים לפני השליחה</p>
+
+            <div className="space-y-4">
+              {/* Customer Details */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">פרטי לקוח</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-medium">שם לקוח:</span>
+                    <span className="text-gray-900">{formData.customerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-medium">מספר רכב:</span>
+                    <span className="text-gray-900">{formData.carPlate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-medium">מספר טלפון:</span>
+                    <span className="text-gray-900">{formData.phoneNumber}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quote Details */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">פרטי הצעה</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-medium">מספר הצעה:</span>
+                    <span className="text-blue-600 font-bold">{formData.quoteNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-medium">סכום (כולל מע״מ):</span>
+                    <span className="text-green-600 font-bold text-lg">₪{formData.quoteAmount}</span>
+                  </div>
+                  {formData.notes && (
+                    <div>
+                      <span className="text-gray-700 font-medium block mb-1">הערות:</span>
+                      <p className="text-gray-900 bg-white p-2 rounded border">{formData.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Images Preview */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">תמונות הצעה</h3>
+                <div className={`grid gap-3 ${imagePreview2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {imagePreview && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 mb-2 text-center">תמונה 1</p>
+                      <img
+                        src={imagePreview}
+                        alt="Quote preview 1"
+                        className="w-full h-auto rounded border-2 border-purple-300"
+                      />
+                    </div>
+                  )}
+                  {imagePreview2 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-700 mb-2 text-center">תמונה 2</p>
+                      <img
+                        src={imagePreview2}
+                        alt="Quote preview 2"
+                        className="w-full h-auto rounded border-2 border-purple-300"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                disabled={isLoading}
+                className="flex-1 py-3 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                ← חזור לעריכה
+              </button>
+              <button
+                onClick={handleConfirmSubmit}
+                disabled={isLoading}
+                className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    שולח...
+                  </>
+                ) : (
+                  <>
+                    <Send size={20} />
+                    אישור ושליחה
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

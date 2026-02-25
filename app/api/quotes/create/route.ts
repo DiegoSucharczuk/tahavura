@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       quoteNumber,
       quoteAmount,
       quoteImageUrl,
+      quoteImageUrl2,
       notes,
       idNumber
     } = body;
@@ -118,21 +119,28 @@ export async function POST(request: NextRequest) {
     // Create quote ID
     const quoteId = `quote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Create quote document with cleaned data
-    await adminDb.collection('quotes').doc(quoteId).set({
+    // Create quote document with cleaned data (using compressed base64 images from client)
+    const quoteData: any = {
       customerName: sanitizeString(customerName.trim()),
       carPlate: carPlateValidation.cleaned,
       phoneNumber: phoneValidation.cleaned,
       quoteNumber: sanitizeString(quoteNumber.trim()),
       quoteAmount: amountValidation.cleaned,
-      quoteImageUrl,
+      quoteImageUrl, // Compressed base64 from client
       notes: sanitizeString(notes || ''),
       idNumber: sanitizeString(idNumber || ''),
       status: 'pending',
       signatureImageUrl: null,
       createdAt: new Date(),
       approvedAt: null,
-    });
+    };
+
+    // Add second image if provided
+    if (quoteImageUrl2) {
+      quoteData.quoteImageUrl2 = quoteImageUrl2; // Compressed base64 from client
+    }
+
+    await adminDb.collection('quotes').doc(quoteId).set(quoteData);
 
     return NextResponse.json({ quoteId });
   } catch (error) {
