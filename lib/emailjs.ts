@@ -57,11 +57,9 @@ export async function sendPDFByEmail(
     const { token: viewToken } = await tokenResponse.json();
     console.log('✅ View token created:', viewToken.substring(0, 8) + '...');
 
-    // Use production URL if available, otherwise use current origin
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                    (window.location.origin.includes('localhost')
-                      ? 'https://tahavura.vercel.app' // Production Vercel domain
-                      : window.location.origin);
+    // Use current origin for email links
+    // This way localhost emails work locally, and production emails work in production
+    const baseUrl = window.location.origin;
 
     // Use /view/ route with secure token
     const pdfLink = `${baseUrl}/view/${quoteId}?token=${viewToken}`;
