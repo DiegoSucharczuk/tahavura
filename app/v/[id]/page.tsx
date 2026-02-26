@@ -6,6 +6,8 @@ import { Check, Lock } from 'lucide-react';
 import { SignaturePad } from '@/components/SignaturePad';
 import { getQuote, updateQuoteWithSignature, uploadImageFromDataUrl } from '@/lib/firestore';
 import { Quote } from '@/lib/types';
+import { generateQuotePDFBase64 } from '@/lib/pdf';
+import { sendPDFByEmail } from '@/lib/emailjs';
 
 export default function ApprovalPage() {
   const params = useParams();
@@ -78,15 +80,36 @@ export default function ApprovalPage() {
       // Update quote with signature and ID number
       await updateQuoteWithSignature(quoteId, signatureUrl, idNumber);
 
-      // Update local state
-      setQuote({
+      // Create updated quote object
+      const updatedQuote: Quote = {
         ...quote,
         idNumber,
         status: 'approved',
         signatureImageUrl: signatureUrl,
         approvedAt: new Date(),
-      });
+      };
+
+      // Update local state
+      setQuote(updatedQuote);
       setIsApproved(true);
+
+      // Automatically send PDF to employee who created the quote
+      if (quote.createdByEmail) {
+        try {
+          console.log('📧 Sending PDF automatically to:', quote.createdByEmail);
+          const pdfBase64 = await generateQuotePDFBase64(updatedQuote);
+          await sendPDFByEmail(quote.createdByEmail, pdfBase64, {
+            customerName: quote.customerName,
+            carPlate: quote.carPlate,
+            quoteNumber: quote.quoteNumber,
+            quoteAmount: quote.quoteAmount,
+          }, quote.createdByEmail, quoteId);
+          console.log('✅ PDF sent successfully to employee');
+        } catch (emailError) {
+          console.error('Error sending automatic email:', emailError);
+          // Don't show error to customer - this is a background operation
+        }
+      }
     } catch (error) {
       console.error('Error saving signature:', error);
       alert('טעות בשמירת החתימה. אנא נסה שוב.');

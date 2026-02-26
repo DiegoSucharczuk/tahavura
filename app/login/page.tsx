@@ -36,8 +36,9 @@ export default function LoginPage() {
       }
 
       // Cookie is now set server-side as HttpOnly (more secure)
-      // Store user role in localStorage for client-side access
+      // Store user role and email in localStorage for client-side access
       localStorage.setItem('userRole', data.user.role);
+      localStorage.setItem('userEmail', data.user.email);
 
       // Redirect to dashboard
       router.push('/internal-dashboard');

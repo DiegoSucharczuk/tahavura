@@ -197,6 +197,7 @@ export const CameraInput: React.FC<CameraInputProps> = ({
                   <p className="font-semibold mb-2">שגיאה בקאמרה</p>
                   <p className="text-sm mb-4">{error}</p>
                   <button
+                    type="button"
                     onClick={closeCamera}
                     className="px-4 py-2 bg-white text-red-600 rounded font-medium"
                   >
@@ -206,6 +207,7 @@ export const CameraInput: React.FC<CameraInputProps> = ({
               </div>
             )}
             <button
+              type="button"
               onClick={capturePhoto}
               disabled={error !== null}
               className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -213,6 +215,7 @@ export const CameraInput: React.FC<CameraInputProps> = ({
               <Camera size={32} />
             </button>
             <button
+              type="button"
               onClick={closeCamera}
               className="absolute top-4 right-4 w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white hover:bg-red-700 transition-colors"
             >
@@ -229,12 +232,14 @@ export const CameraInput: React.FC<CameraInputProps> = ({
             />
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3">
               <button
+                type="button"
                 onClick={() => setCapturedImage(null)}
                 className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white hover:bg-gray-700 transition-colors shadow-lg"
               >
                 <X size={20} />
               </button>
               <button
+                type="button"
                 onClick={confirmCapture}
                 className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white hover:bg-green-700 transition-colors shadow-lg"
               >
@@ -251,6 +256,7 @@ export const CameraInput: React.FC<CameraInputProps> = ({
   return (
     <div>
       <button
+        type="button"
         onClick={startCamera}
         disabled={isLoading}
         className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -274,6 +280,7 @@ export const CameraInput: React.FC<CameraInputProps> = ({
       />
 
       <button
+        type="button"
         onClick={() => fileInputRef.current?.click()}
         className="w-full mt-3 py-3 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors"
       >

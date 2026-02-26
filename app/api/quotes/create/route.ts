@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
       signatureImageUrl: null,
       createdAt: new Date(),
       approvedAt: null,
+      createdByEmail: payload.email, // Store employee email for later emailing
     };
 
     // Add second image if provided

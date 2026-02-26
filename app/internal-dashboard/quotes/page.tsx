@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users, Edit } from 'lucide-react';
+import { Share2, Download, Eye, Trash2, RefreshCw, MessageCircle, LogOut, Users, Edit, Mail } from 'lucide-react';
 import { Quote } from '@/lib/types';
 import { generateQuotePDF } from '@/lib/pdf';
 import { getAllQuotes, deleteQuote } from '@/lib/firestore';
 import { BackButton } from '@/components/BackButton';
+import { SendEmailModal } from '@/components/SendEmailModal';
 
 export default function QuotesListPage() {
   const router = useRouter();
@@ -18,6 +19,9 @@ export default function QuotesListPage() {
   const [filter, setFilter] = useState<'all' | 'approved' | 'pending'>('all');
   const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
   const [isMobile, setIsMobile] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedQuoteForEmail, setSelectedQuoteForEmail] = useState<Quote | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
 
   const handleLogout = async () => {
     try {
@@ -46,6 +50,12 @@ export default function QuotesListPage() {
     const role = localStorage.getItem('userRole') as 'admin' | 'worker' | null;
     if (role) {
       setUserRole(role);
+    }
+
+    // Get current user email from localStorage
+    const email = localStorage.getItem('userEmail');
+    if (email) {
+      setCurrentUserEmail(email);
     }
   }, []);
 
@@ -133,6 +143,16 @@ ${approvalUrl}
       setCopiedLinkId(quote.id);
       setTimeout(() => setCopiedLinkId(null), 2000);
     });
+  };
+
+  const handleSendEmail = (quote: Quote) => {
+    setSelectedQuoteForEmail(quote);
+    setShowEmailModal(true);
+  };
+
+  const handleCloseEmailModal = () => {
+    setShowEmailModal(false);
+    setSelectedQuoteForEmail(null);
   };
 
   if (isLoading) {
@@ -370,14 +390,23 @@ ${approvalUrl}
                     <MessageCircle size={18} />
                   </button>
                   {quote.status === 'approved' && (
-                    <button
-                      onClick={() => handleGeneratePDF(quote)}
-                      disabled={isGeneratingPDF === quote.id}
-                      className="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50 disabled:opacity-50"
-                      title="הורד PDF"
-                    >
-                      <Download size={18} />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleGeneratePDF(quote)}
+                        disabled={isGeneratingPDF === quote.id}
+                        className="text-purple-600 hover:text-purple-800 p-2 rounded hover:bg-purple-50 disabled:opacity-50"
+                        title="הורד PDF"
+                      >
+                        <Download size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleSendEmail(quote)}
+                        className="text-blue-600 hover:text-blue-800 p-2 rounded hover:bg-blue-50"
+                        title="שלח PDF במייל"
+                      >
+                        <Mail size={18} />
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => handleDeleteQuote(quote.id)}
@@ -399,6 +428,15 @@ ${approvalUrl}
           </div>
         )}
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && selectedQuoteForEmail && (
+        <SendEmailModal
+          quote={selectedQuoteForEmail}
+          currentUserEmail={currentUserEmail}
+          onClose={handleCloseEmailModal}
+        />
+      )}
     </main>
   );
 }

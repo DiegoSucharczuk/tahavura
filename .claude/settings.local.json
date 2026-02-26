@@ -18,7 +18,9 @@
       "Bash(git push:*)",
       "Bash(vercel:*)",
       "Bash(pkill:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "WebFetch(domain:www.emailjs.com)",
+      "Bash(ls:*)"
     ]
   }
 }

@@ -38,6 +38,7 @@ export default function Dashboard() {
   const [userRole, setUserRole] = useState<'admin' | 'worker'>('worker');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
 
   useEffect(() => {
     // בדוק אם זה מכשיר נייד
@@ -105,6 +106,7 @@ export default function Dashboard() {
 
   const handleImageCapture = useCallback(async (file: File) => {
     setSelectedImage(file);
+    setIsCompressingImage(true); // Start loading
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
@@ -117,15 +119,18 @@ export default function Dashboard() {
 
         setImagePreview(compressed);
         setImageBase64(compressed);
+        setIsCompressingImage(false); // Done loading
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
       } catch (error) {
         console.error('❌ Error compressing image:', error);
+        setIsCompressingImage(false); // Stop loading on error
         alert('שגיאה בדחיסת התמונה');
       }
     };
     reader.onerror = () => {
       console.error('❌ Error reading file');
+      setIsCompressingImage(false); // Stop loading on error
       alert('טעות בקריאת התמונה');
     };
     reader.readAsDataURL(file);
@@ -133,6 +138,7 @@ export default function Dashboard() {
 
   const handleImageCapture2 = useCallback(async (file: File) => {
     setSelectedImage2(file);
+    setIsCompressingImage(true); // Start loading
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
@@ -145,15 +151,18 @@ export default function Dashboard() {
 
         setImagePreview2(compressed);
         setImageBase64_2(compressed);
+        setIsCompressingImage(false); // Done loading
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
       } catch (error) {
         console.error('❌ Error compressing image 2:', error);
+        setIsCompressingImage(false); // Stop loading on error
         alert('שגיאה בדחיסת ההצעה 2');
       }
     };
     reader.onerror = () => {
       console.error('❌ Error reading file 2');
+      setIsCompressingImage(false); // Stop loading on error
       alert('טעות בקריאת התמונה השנייה');
     };
     reader.readAsDataURL(file);
@@ -178,6 +187,10 @@ export default function Dashboard() {
   const handleReviewQuote = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log('🔍 Validating form...');
+    console.log('📸 Image base64 length:', imageBase64.length);
+    console.log('📸 Image preview exists:', !!imagePreview);
+
     // Validate all fields
     const nameValidation = validateName(formData.customerName);
     const carPlateValidation = validateCarPlate(formData.carPlate);
@@ -195,15 +208,20 @@ export default function Dashboard() {
 
     // Check if image was uploaded
     if (!imageBase64 || imageBase64.length === 0) {
+      console.error('❌ No image uploaded!');
       errors.image = 'אנא העלה תמונה של ההצעה';
+    } else {
+      console.log('✅ Image validated successfully');
     }
 
     if (Object.keys(errors).length > 0) {
+      console.error('❌ Validation errors:', errors);
       setValidationErrors(errors);
       alert('אנא תקן את השגיאות בטופס');
       return;
     }
 
+    console.log('✅ All validations passed');
     // Show confirmation modal
     setShowConfirmModal(true);
   };
@@ -467,6 +485,14 @@ export default function Dashboard() {
                       setSelectedImage(null);
                       setImagePreview(null);
                       setImageBase64('');
+                      // Clear image error when removing image
+                      if (validationErrors.image) {
+                        setValidationErrors((prev) => {
+                          const newErrors = { ...prev };
+                          delete newErrors.image;
+                          return newErrors;
+                        });
+                      }
                     }}
                     className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
                     disabled={isLoading}
@@ -474,6 +500,11 @@ export default function Dashboard() {
                     ✕
                   </button>
                 </div>
+              )}
+
+              {/* Image Error Message */}
+              {validationErrors.image && (
+                <p className="mt-2 text-sm text-red-600">{validationErrors.image}</p>
               )}
             </div>
 
@@ -511,10 +542,17 @@ export default function Dashboard() {
             {/* Review Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isCompressingImage}
               className="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              📋 בדוק פרטים לפני שליחה
+              {isCompressingImage ? (
+                <>
+                  <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  מעבד תמונה...
+                </>
+              ) : (
+                <>📋 בדוק פרטים לפני שליחה</>
+              )}
             </button>
           </form>
         </div>
@@ -535,10 +573,11 @@ export default function Dashboard() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-4xl w-full my-8 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">בדיקת פרטי ההצעה</h2>
-            <p className="text-gray-600 mb-6 text-center">אנא בדוק שכל הפרטים נכונים לפני השליחה</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full my-8 p-6 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">בדיקת פרטי ההצעה</h2>
+              <p className="text-gray-600 mb-6 text-center">אנא בדוק שכל הפרטים נכונים לפני השליחה</p>
 
             <div className="space-y-4">
               {/* Customer Details */}
@@ -609,32 +648,35 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                disabled={isLoading}
-                className="flex-1 py-3 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
-              >
-                ← חזור לעריכה
-              </button>
-              <button
-                onClick={handleConfirmSubmit}
-                disabled={isLoading}
-                className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    שולח...
-                  </>
-                ) : (
-                  <>
-                    <Send size={20} />
-                    אישור ושליחה
-                  </>
-                )}
-              </button>
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-6 sticky bottom-0 bg-white pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  disabled={isLoading}
+                  className="flex-1 py-3 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+                >
+                  ← חזור לעריכה
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSubmit}
+                  disabled={isLoading}
+                  className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      שולח...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={20} />
+                      אישור ושליחה
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

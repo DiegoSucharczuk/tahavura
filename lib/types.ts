@@ -13,6 +13,7 @@ export interface Quote {
   signatureImageUrl: string | null;
   createdAt: Date;
   approvedAt: Date | null;
+  createdByEmail?: string; // Email of employee who created the quote
 }
 
 export type QuoteFormData = Omit<Quote, 'id' | 'status' | 'signatureImageUrl' | 'createdAt' | 'approvedAt'>;
